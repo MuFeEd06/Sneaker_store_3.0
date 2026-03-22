@@ -4,10 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}Claxxic India{% endblock %}</title>
+
+    {# ── SITE SETTINGS injected from DB ── #}
+    {% set s = site_settings %}
+    {% if s.hero_font and s.hero_font != 'default' %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family={{ s.hero_font | replace(' ','+') }}:wght@400;700;900&display=swap" rel="stylesheet">
+    {% endif %}
+
+    <style>
+        :root {
+            --primary:       {{ s.primary_color or '#2B9FD8' }};
+            --primary-dark:  color-mix(in srgb, {{ s.primary_color or '#2B9FD8' }} 75%, #000);
+            --primary-light: color-mix(in srgb, {{ s.primary_color or '#2B9FD8' }} 12%, #fff);
+            --glass-border:  color-mix(in srgb, {{ s.primary_color or '#2B9FD8' }} 18%, transparent);
+            --shadow:        0 4px 24px color-mix(in srgb, {{ s.primary_color or '#2B9FD8' }} 10%, transparent);
+            --shadow-hover:  0 8px 32px color-mix(in srgb, {{ s.primary_color or '#2B9FD8' }} 22%, transparent);
+            --hero-font:     {{ ("'" + s.hero_font + "', ") if s.hero_font and s.hero_font != 'default' else '' }}system-ui, sans-serif;
+        }
+    </style>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
+
+    {# ── OFFER RIBBON (marquee) ── #}
+    {% if site_settings.offer and site_settings.offer.active and site_settings.offer.text %}
+    <div id="offer-ribbon" style="
+        background: {{ site_settings.offer.bg_color }};
+        color: {{ site_settings.offer.text_color }};
+        padding: 9px 0;
+        overflow: hidden;
+        position: relative;
+        z-index: 50;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    ">
+        <div class="ribbon-track" style="
+            display: flex;
+            gap: 0;
+            animation: ribbonScroll 18s linear infinite;
+            white-space: nowrap;
+            width: max-content;
+        ">
+            {% for i in range(6) %}
+            <span style="padding: 0 48px; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.3px;">
+                {{ site_settings.offer.text }}
+                <span style="margin: 0 12px; opacity: 0.4;">✦</span>
+            </span>
+            {% endfor %}
+        </div>
+        <style>
+            @keyframes ribbonScroll {
+                from { transform: translateX(0); }
+                to   { transform: translateX(-50%); }
+            }
+        </style>
+    </div>
+    {% endif %}
 
     <a href="https://wa.me/918606466821" class="whatsapp-btn" target="_blank" aria-label="Chat on WhatsApp">
         <img src="{{ url_for('static', filename='logo/whatsapp.png') }}" alt="WhatsApp">
