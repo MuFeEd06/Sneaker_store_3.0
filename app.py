@@ -1,5 +1,6 @@
 """
 Claxxic India — Flask Backend (Vercel + Supabase Edition)
+Key fix: DB init is lazy (before_request) not at import time — required for Vercel serverless
 """
 
 from flask import (Flask, jsonify, render_template, request,
@@ -25,42 +26,50 @@ if DATABASE_URL.startswith("postgres://"):
 
 USE_DB = bool(DATABASE_URL)
 
+# ── SQLAlchemy config — no connection at import time (Vercel requirement) ──────
 if USE_DB:
-    print(f"[claxxic] ✅ DATABASE_URL found — using Supabase PostgreSQL")
-    app.config["SQLALCHEMY_DATABASE_URI"]        = DATABASE_URL
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"]      = {
+    app.config["SQLALCHEMY_DATABASE_URI"]   = DATABASE_URL
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "pool_pre_ping": True,
         "pool_recycle":  300,
         "pool_size":     1,
         "max_overflow":  0,
         "connect_args":  {"connect_timeout": 10},
     }
-    db.init_app(app)
-    with app.app_context():
-        try:
-            db.create_all()
-            print("[claxxic] ✅ Database tables ready")
-        except Exception as e:
-            print(f"[claxxic] ❌ DB init failed: {e}")
-            USE_DB = False
 else:
-    print("[claxxic] ⚠️  No DATABASE_URL")
-    app.config["SQLALCHEMY_DATABASE_URI"]        = "sqlite:///:memory:"
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    db.init_app(app)
-    with app.app_context():
-        db.create_all()
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
 
-app.config["SECRET_KEY"]                 = os.environ.get("SECRET_KEY", "claxxic-secret-2026")
-app.config["SESSION_COOKIE_SECURE"]      = True
-app.config["SESSION_COOKIE_HTTPONLY"]    = True
-app.config["SESSION_COOKIE_SAMESITE"]   = "Lax"
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=12)
-app.config["MAX_CONTENT_LENGTH"]         = 5 * 1024 * 1024
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SECRET_KEY"]                     = os.environ.get("SECRET_KEY", "claxxic-secret-2026")
+app.config["SESSION_COOKIE_SECURE"]          = True
+app.config["SESSION_COOKIE_HTTPONLY"]        = True
+app.config["SESSION_COOKIE_SAMESITE"]        = "Lax"
+app.config["PERMANENT_SESSION_LIFETIME"]     = timedelta(hours=12)
+app.config["MAX_CONTENT_LENGTH"]             = 5 * 1024 * 1024
+
+db.init_app(app)
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "claxxic@admin")
 ALLOWED_EXT    = {"png", "jpg", "jpeg", "webp"}
+
+# ── LAZY DB INIT — runs on first request, not at module load ──────────────────
+_db_ready = False
+
+@app.before_request
+def ensure_db():
+    global _db_ready, USE_DB
+    if _db_ready:
+        return
+    _db_ready = True
+    try:
+        db.create_all()
+        print("[claxxic] ✅ DB tables ready")
+    except Exception as e:
+        print(f"[claxxic] ❌ DB init failed: {e}")
+        USE_DB = False
+
+
+# ── HELPERS ───────────────────────────────────────────────────────────────────
 
 def get_offer():
     if not USE_DB:
@@ -99,6 +108,9 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
+
+# ── PAGE ROUTES ───────────────────────────────────────────────────────────────
+
 @app.route("/")
 def index(): return render_template("index.html")
 @app.route("/product")
@@ -107,6 +119,9 @@ def product(): return render_template("product.html")
 def brand(): return render_template("brand.html")
 @app.route("/cart")
 def cart(): return render_template("cart.html")
+
+
+# ── ADMIN AUTH ────────────────────────────────────────────────────────────────
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin_login():
@@ -123,6 +138,9 @@ def admin_login():
 def admin_logout():
     session.clear()
     return redirect(url_for("admin_login"))
+
+
+# ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
 
 @app.route("/admin/dashboard")
 @admin_required
@@ -146,12 +164,18 @@ def admin_dashboard():
         orders=[], status_filter="all", total_orders=0, total_rev="₹0",
         pending=0, confirmed=0, shipped=0, delivered=0, offer=get_offer())
 
+
+# ── ADMIN PRODUCTS ────────────────────────────────────────────────────────────
+
 @app.route("/admin/products")
 @admin_required
 def admin_products():
     products = [p.to_dict() for p in Product.query.order_by(Product.brand, Product.name).all()] if USE_DB else []
     brands   = sorted(set(p["brand"] for p in products))
     return render_template("admin_products.html", products=products, brands=brands, offer=get_offer())
+
+
+# ── PUBLIC API ────────────────────────────────────────────────────────────────
 
 @app.route("/api/products")
 def get_products():
@@ -166,7 +190,8 @@ def get_products():
     if tag:       query = query.filter(Product.tag == tag)
     if min_price: query = query.filter(Product.price >= min_price)
     if max_price: query = query.filter(Product.price <= max_price)
-    if search:    query = query.filter(db.or_(Product.name.ilike(f"%{search}%"), Product.brand.ilike(f"%{search}%")))
+    if search:    query = query.filter(db.or_(
+        Product.name.ilike(f"%{search}%"), Product.brand.ilike(f"%{search}%")))
     return jsonify(fix_image_paths([p.to_dict() for p in query.all()]))
 
 @app.route("/api/products/trending")
@@ -192,11 +217,15 @@ def get_brands():
 def search_products():
     q = request.args.get("q", "").lower().strip()
     if not q or not USE_DB: return jsonify([])
-    products = Product.query.filter(db.or_(Product.name.ilike(f"%{q}%"), Product.brand.ilike(f"%{q}%"))).all()
+    products = Product.query.filter(db.or_(
+        Product.name.ilike(f"%{q}%"), Product.brand.ilike(f"%{q}%"))).all()
     return jsonify(fix_image_paths([p.to_dict() for p in products]))
 
 @app.route("/api/offer")
 def api_get_offer(): return jsonify(get_offer())
+
+
+# ── ADMIN API ─────────────────────────────────────────────────────────────────
 
 @app.route("/api/admin/products", methods=["POST"])
 @admin_required
@@ -262,10 +291,15 @@ def api_upload_image():
 def api_save_offer():
     if not USE_DB: return jsonify({"error": "No database"}), 503
     data  = request.get_json(force=True)
-    offer = {"active": bool(data.get("active",False)), "text": data.get("text","").strip(),
-             "bg_color": data.get("bg_color","#FF6B35"), "text_color": data.get("text_color","#ffffff")}
+    offer = {"active": bool(data.get("active", False)),
+             "text":       data.get("text","").strip(),
+             "bg_color":   data.get("bg_color","#FF6B35"),
+             "text_color": data.get("text_color","#ffffff")}
     set_offer(offer)
     return jsonify({"success": True, "offer": offer})
+
+
+# ── ORDERS ────────────────────────────────────────────────────────────────────
 
 @app.route("/api/orders", methods=["POST"])
 def create_order():
@@ -284,10 +318,12 @@ def create_order():
         db.session.add(order)
         db.session.flush()
         for item in items:
-            db.session.add(OrderItem(order_id=order.id, product_id=item.get("id",0),
+            db.session.add(OrderItem(
+                order_id=order.id, product_id=item.get("id",0),
                 name=item.get("name",""), brand=item.get("brand",""),
                 size=item.get("size",""), color=item.get("color",""),
-                qty=item.get("qty",1), price=item.get("price",0), image=item.get("image","")))
+                qty=item.get("qty",1), price=item.get("price",0),
+                image=item.get("image","")))
         db.session.commit()
         return jsonify({"success": True, "order_id": order.id}), 201
     except Exception as e:
@@ -316,6 +352,9 @@ def update_order_notes(order_id):
     order.updated_at = datetime.utcnow()
     db.session.commit()
     return jsonify({"success": True})
+
+
+# ── ERRORS ────────────────────────────────────────────────────────────────────
 
 @app.errorhandler(404)
 def not_found(e): return jsonify({"error": str(e)}), 404
