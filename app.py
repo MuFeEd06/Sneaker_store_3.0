@@ -86,6 +86,44 @@ def set_offer(data):
     else: db.session.add(Setting(key="offer", value=json.dumps(data)))
     db.session.commit()
 
+
+# ── COLOUR DERIVATION HELPERS ──────────────────────────────────────────────────
+
+def _hex_to_rgb(hex_color):
+    h = (hex_color or "#2B9FD8").lstrip("#")
+    if len(h) == 3: h = h[0]*2 + h[1]*2 + h[2]*2
+    return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
+def _darken(hex_color, factor=0.72):
+    r, g, b = _hex_to_rgb(hex_color)
+    return "#{:02x}{:02x}{:02x}".format(int(r*factor), int(g*factor), int(b*factor))
+
+def _lighten(hex_color, alpha=0.12):
+    r, g, b = _hex_to_rgb(hex_color)
+    nr = int(r + (255 - r) * (1 - alpha))
+    ng = int(g + (255 - g) * (1 - alpha))
+    nb = int(b + (255 - b) * (1 - alpha))
+    return "#{:02x}{:02x}{:02x}".format(nr, ng, nb)
+
+def _rgba(hex_color, alpha):
+    r, g, b = _hex_to_rgb(hex_color)
+    return f"rgba({r},{g},{b},{alpha})"
+
+def build_theme_vars(primary):
+    """Return dict of all CSS variables derived from primary colour."""
+    return {
+        "primary":       primary,
+        "primary_dark":  _darken(primary, 0.72),
+        "primary_light": _lighten(primary, 0.12),
+        "rgba_008":      _rgba(primary, 0.08),
+        "rgba_010":      _rgba(primary, 0.10),
+        "rgba_018":      _rgba(primary, 0.18),
+        "rgba_022":      _rgba(primary, 0.22),
+        "rgba_025":      _rgba(primary, 0.25),
+        "rgba_020":      _rgba(primary, 0.20),
+        "rgba_004":      _rgba(primary, 0.04),
+    }
+
 DEFAULT_SITE_SETTINGS = {
     "primary_color": "#2B9FD8",
     "hero_font":     "default",
@@ -119,12 +157,15 @@ def save_site_settings(data):
 
 @app.context_processor
 def inject_site_settings():
-    """Makes site_settings available in every template automatically"""
+    """Makes site_settings + theme CSS vars available in every template"""
     try:
-        return {"site_settings": get_site_settings()}
+        s = get_site_settings()
+        s["theme"] = build_theme_vars(s.get("primary_color", "#2B9FD8"))
+        return {"site_settings": s}
     except:
         s = DEFAULT_SITE_SETTINGS.copy()
         s["offer"] = {"active": False, "text": "", "bg_color": "#FF6B35", "text_color": "#ffffff"}
+        s["theme"] = build_theme_vars("#2B9FD8")
         return {"site_settings": s}
 
 def fix_image_paths(products_list):
