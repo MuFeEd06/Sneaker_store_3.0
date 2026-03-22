@@ -775,3 +775,8 @@ footer {
 
     #sneaker-container { height: 320px; }
 }
+
+/* ── HERO FONT (set from admin) ── */
+.hero-headline, .hero-eyebrow, .hero-sub, .hero-cta {
+    font-family: var(--hero-font, system-ui, sans-serif);
+}
