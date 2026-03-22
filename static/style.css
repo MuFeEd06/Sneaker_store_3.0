@@ -2,22 +2,26 @@
    ROOT VARIABLES & GLOBAL RESET
    ================================================= */
 :root {
-    --primary:       #2B9FD8;        /* main light blue accent          */
-    --primary-dark:  var(--primary-dark);        /* darker blue for hover states    */
-    --primary-light: #e8f5fd;        /* very light blue tint            */
-    --bg:            #f4f8fb;        /* page background — off-white     */
-    --surface:       #ffffff;        /* card / panel surface            */
-    --surface-2:     #eaf3fa;        /* subtle secondary surface        */
+    /* --primary, --primary-dark, --primary-light, --glass-border,
+       --shadow, --shadow-hover are injected by base.html from DB settings.
+       Only static values that never change live here. */
+    --bg:            #f4f8fb;
+    --surface:       #ffffff;
+    --surface-2:     #eaf3fa;
     --glass-bg:      rgba(255,255,255,0.75);
-    --glass-border:  var(--primary-rgba-018);
     --blur:          blur(20px);
-    --text:          #1a1a2e;        /* primary text — near black       */
-    --text-muted:    #5a6a7a;        /* secondary text                  */
-    --text-light:    #9badb8;        /* placeholder / subtle text       */
-    --border:        #d0e6f5;        /* default border colour           */
-    --shadow:        0 4px 24px var(--primary-rgba-008);
-    --shadow-hover:  0 8px 32px var(--primary-rgba-020);
+    --text:          #1a1a2e;
+    --text-muted:    #5a6a7a;
+    --text-light:    #9badb8;
+    --border:        #d0e6f5;
     --transition:    0.3s ease;
+    /* Fallbacks in case base.html hasn't run yet */
+    --primary:       #2B9FD8;
+    --primary-dark:  #1a7ab0;
+    --primary-light: #e8f5fd;
+    --glass-border:  rgba(43,159,216,0.18);
+    --shadow:        0 4px 24px rgba(43,159,216,0.10);
+    --shadow-hover:  0 8px 32px rgba(43,159,216,0.22);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,7 +31,7 @@ html, body {
     overflow-x: hidden;
     background: var(--bg);
     color: var(--text);
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: var(--hero-font, 'Segoe UI', Arial, sans-serif);
 }
 
 img { max-width: 100%; display: block; }
@@ -57,7 +61,7 @@ header {
     z-index: 1000;
     height: 70px;
     gap: 20px;
-    box-shadow: 0 2px 16px var(--primary-rgba-008);
+    box-shadow: 0 2px 16px rgba(43,159,216,0.08);
 }
 
 .logo-container {
@@ -116,7 +120,7 @@ header {
     text-align: center;
     border-bottom: 1px solid var(--border);
     z-index: 999;
-    box-shadow: 0 8px 24px var(--primary-rgba-008);
+    box-shadow: 0 8px 24px rgba(43,159,216,0.10);
 }
 
 .nav-menu a {
@@ -190,7 +194,7 @@ header.navbar .logo img { height: 50px; }
 }
 
 #sneaker-container canvas {
-    filter: drop-shadow(0 40px 80px var(--primary-rgba-025));
+    filter: drop-shadow(0 40px 80px rgba(43,159,216,0.25));
 }
 
 
@@ -229,7 +233,7 @@ header.navbar .logo img { height: 50px; }
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, var(--primary-rgba-004) 0%, transparent 60%);
+    background: linear-gradient(135deg, rgba(43,159,216,0.04) 0%, transparent 60%);
     pointer-events: none;
 }
 
@@ -248,7 +252,7 @@ header.navbar .logo img { height: 50px; }
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 4px 14px var(--primary-rgba-008);
+    box-shadow: 0 4px 14px rgba(43,159,216,0.10);
     padding: 8px;
     overflow: hidden;
     background: #fff;
@@ -516,7 +520,7 @@ header.navbar .logo img { height: 50px; }
 
 .color-swatch:hover {
     transform: scale(1.18);
-    box-shadow: 0 4px 12px var(--primary-rgba-025);
+    box-shadow: 0 4px 12px rgba(43,159,216,0.25);
 }
 
 .color-swatch.active {
@@ -774,11 +778,6 @@ footer {
     .price { font-size: 0.88rem; }
 
     #sneaker-container { height: 320px; }
-}
-
-/* ── HERO FONT (set from admin) ── */
-.hero-headline, .hero-eyebrow, .hero-sub, .hero-cta {
-    font-family: var(--hero-font, system-ui, sans-serif);
 }
 
 /* ── HERO FONT (set from admin) ── */
