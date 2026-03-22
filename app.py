@@ -8,6 +8,7 @@ from flask import (Flask, jsonify, render_template, request,
 from flask_cors import CORS
 from models import db, Product, Setting, Order, OrderItem
 import json, os, copy, re
+import requests as http_requests
 from datetime import datetime, timedelta
 from functools import wraps
 from werkzeug.utils import secure_filename
@@ -51,6 +52,30 @@ db.init_app(app)
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "claxxic@admin")
 ALLOWED_EXT    = {"png", "jpg", "jpeg", "webp"}
+
+# ── SUPABASE STORAGE CONFIG ───────────────────────────────────────────────────
+# Extract project ref and service key from env vars
+SUPABASE_URL     = os.environ.get("SUPABASE_URL", "")          # e.g. https://xxxx.supabase.co
+SUPABASE_KEY     = os.environ.get("SUPABASE_ANON_KEY", "")    # anon/public key from Supabase API settings
+STORAGE_BUCKET   = "product-images"                             # bucket name in Supabase Storage
+
+def _supabase_upload(file_bytes, content_type, storage_path):
+    """Upload bytes to Supabase Storage, return public URL or raise."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_KEY env vars not set")
+
+    url = f"{SUPABASE_URL}/storage/v1/object/{STORAGE_BUCKET}/{storage_path}"
+    headers = {
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type":  content_type,
+        "x-upsert":      "true",   # overwrite if exists
+    }
+    resp = http_requests.post(url, headers=headers, data=file_bytes, timeout=20)
+    if resp.status_code not in (200, 201):
+        raise RuntimeError(f"Supabase upload failed: {resp.status_code} {resp.text}")
+
+    public_url = f"{SUPABASE_URL}/storage/v1/object/public/{STORAGE_BUCKET}/{storage_path}"
+    return public_url
 
 # ── LAZY DB INIT — runs on first request, not at module load ──────────────────
 _db_ready = False
@@ -372,14 +397,21 @@ def api_upload_image():
     if "image" not in request.files: return jsonify({"error": "No file"}), 400
     file  = request.files["image"]
     brand = request.form.get("brand", "misc")
-    if not file or not allowed_file(file.filename): return jsonify({"error": "Invalid file type"}), 400
-    brand_slug = slugify(brand)
-    upload_dir = os.path.join(STATIC_DIR, "shoes", brand_slug)
-    os.makedirs(upload_dir, exist_ok=True)
-    filename = secure_filename(file.filename)
-    file.save(os.path.join(upload_dir, filename))
-    path = f"shoes/{brand_slug}/{filename}"
-    return jsonify({"success": True, "path": path, "url": f"/static/{path}"})
+    if not file or not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file type. Use JPG, PNG or WEBP"}), 400
+
+    brand_slug    = slugify(brand)
+    filename      = secure_filename(file.filename)
+    storage_path  = f"shoes/{brand_slug}/{filename}"
+    file_bytes    = file.read()
+    content_type  = file.content_type or "image/jpeg"
+
+    try:
+        public_url = _supabase_upload(file_bytes, content_type, storage_path)
+        return jsonify({"success": True, "path": public_url, "url": public_url})
+    except Exception as e:
+        print(f"[claxxic] Upload error: {e}")
+        return jsonify({"error": f"Upload failed: {str(e)}"}), 500
 
 @app.route("/api/admin/offer", methods=["POST"])
 @admin_required
@@ -416,10 +448,17 @@ def api_upload_model():
     file = request.files["model"]
     if not file or not file.filename.lower().endswith(".glb"):
         return jsonify({"error": "Only .glb files allowed"}), 400
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(STATIC_DIR, filename)
-    file.save(filepath)
-    return jsonify({"success": True, "path": filename, "url": f"/static/{filename}"})
+
+    filename     = secure_filename(file.filename)
+    storage_path = f"models/{filename}"
+    file_bytes   = file.read()
+
+    try:
+        public_url = _supabase_upload(file_bytes, "model/gltf-binary", storage_path)
+        return jsonify({"success": True, "path": public_url, "url": public_url})
+    except Exception as e:
+        print(f"[claxxic] Model upload error: {e}")
+        return jsonify({"error": f"Upload failed: {str(e)}"}), 500
 
 
 # ── ORDERS ────────────────────────────────────────────────────────────────────
