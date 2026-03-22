@@ -8,7 +8,7 @@ from flask import (Flask, jsonify, render_template, request,
 from flask_cors import CORS
 from models import db, Product, Setting, Order, OrderItem
 import json, os, copy, re
-import requests as http_requests
+import urllib.request, urllib.error
 from datetime import datetime, timedelta
 from functools import wraps
 from werkzeug.utils import secure_filename
@@ -60,22 +60,30 @@ SUPABASE_KEY     = os.environ.get("SUPABASE_ANON_KEY", "")    # anon/public key 
 STORAGE_BUCKET   = "product-images"                             # bucket name in Supabase Storage
 
 def _supabase_upload(file_bytes, content_type, storage_path):
-    """Upload bytes to Supabase Storage, return public URL or raise."""
+    """Upload bytes to Supabase Storage using urllib (no requests dep), return public URL."""
     if not SUPABASE_URL or not SUPABASE_KEY:
-        raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_KEY env vars not set")
+        raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY env vars not set")
 
     url = f"{SUPABASE_URL}/storage/v1/object/{STORAGE_BUCKET}/{storage_path}"
-    headers = {
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type":  content_type,
-        "x-upsert":      "true",   # overwrite if exists
-    }
-    resp = http_requests.post(url, headers=headers, data=file_bytes, timeout=20)
-    if resp.status_code not in (200, 201):
-        raise RuntimeError(f"Supabase upload failed: {resp.status_code} {resp.text}")
+    req = urllib.request.Request(
+        url,
+        data    = file_bytes,
+        method  = "POST",
+        headers = {
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type":  content_type,
+            "x-upsert":      "true",
+        }
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            if resp.status not in (200, 201):
+                raise RuntimeError(f"Supabase upload failed: {resp.status}")
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Supabase upload failed: {e.code} {body}")
 
-    public_url = f"{SUPABASE_URL}/storage/v1/object/public/{STORAGE_BUCKET}/{storage_path}"
-    return public_url
+    return f"{SUPABASE_URL}/storage/v1/object/public/{STORAGE_BUCKET}/{storage_path}"
 
 # ── LAZY DB INIT — runs on first request, not at module load ──────────────────
 _db_ready = False
@@ -158,10 +166,35 @@ DEFAULT_SITE_SETTINGS = {
     "model_speed":   0.006,
 }
 
+def _build_theme(hex_color):
+    """Convert a hex colour into rgba variants for CSS injection."""
+    try:
+        h = hex_color.lstrip("#")
+        r, g, b = int(h[0:2],16), int(h[2:4],16), int(h[4:6],16)
+    except Exception:
+        r, g, b = 43, 159, 216  # fallback to default blue
+    def rgba(a): return f"rgba({r},{g},{b},{a})"
+    # Derive darker/lighter shades
+    rd = max(0, r-40); gd = max(0, g-40); bd = max(0, b-40)
+    rl = min(255,r+180); gl = min(255,g+180); bl = min(255,b+180)
+    return {
+        "primary":       hex_color,
+        "primary_dark":  f"#{rd:02x}{gd:02x}{bd:02x}",
+        "primary_light": f"#{rl:02x}{gl:02x}{bl:02x}",
+        "rgba_004":      rgba(0.04),
+        "rgba_008":      rgba(0.08),
+        "rgba_010":      rgba(0.10),
+        "rgba_018":      rgba(0.18),
+        "rgba_020":      rgba(0.20),
+        "rgba_022":      rgba(0.22),
+        "rgba_025":      rgba(0.25),
+    }
+
 def get_site_settings():
     defaults = DEFAULT_SITE_SETTINGS.copy()
     if not USE_DB:
         defaults["offer"] = get_offer()
+        defaults["theme"] = _build_theme(defaults["primary_color"])
         return defaults
     try:
         row = Setting.query.get("site_settings")
@@ -170,6 +203,7 @@ def get_site_settings():
             defaults.update(saved)
     except: pass
     defaults["offer"] = get_offer()
+    defaults["theme"] = _build_theme(defaults.get("primary_color","#2B9FD8"))
     return defaults
 
 def save_site_settings(data):
