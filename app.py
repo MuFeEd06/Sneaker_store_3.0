@@ -86,6 +86,47 @@ def set_offer(data):
     else: db.session.add(Setting(key="offer", value=json.dumps(data)))
     db.session.commit()
 
+DEFAULT_SITE_SETTINGS = {
+    "primary_color": "#2B9FD8",
+    "hero_font":     "default",
+    "model_path":    "sneaker.glb",
+    "model_scale":   3.0,
+    "model_y":       0.8,
+    "model_speed":   0.006,
+}
+
+def get_site_settings():
+    defaults = DEFAULT_SITE_SETTINGS.copy()
+    if not USE_DB:
+        defaults["offer"] = get_offer()
+        return defaults
+    try:
+        row = Setting.query.get("site_settings")
+        if row:
+            saved = json.loads(row.value)
+            defaults.update(saved)
+    except: pass
+    defaults["offer"] = get_offer()
+    return defaults
+
+def save_site_settings(data):
+    row = Setting.query.get("site_settings")
+    # Only store site_settings keys, not offer
+    to_save = {k: v for k, v in data.items() if k != "offer"}
+    if row: row.value = json.dumps(to_save)
+    else: db.session.add(Setting(key="site_settings", value=json.dumps(to_save)))
+    db.session.commit()
+
+@app.context_processor
+def inject_site_settings():
+    """Makes site_settings available in every template automatically"""
+    try:
+        return {"site_settings": get_site_settings()}
+    except:
+        s = DEFAULT_SITE_SETTINGS.copy()
+        s["offer"] = {"active": False, "text": "", "bg_color": "#FF6B35", "text_color": "#ffffff"}
+        return {"site_settings": s}
+
 def fix_image_paths(products_list):
     result = copy.deepcopy(products_list)
     for p in result:
@@ -224,6 +265,19 @@ def search_products():
 @app.route("/api/offer")
 def api_get_offer(): return jsonify(get_offer())
 
+@app.route("/api/site-settings")
+def api_public_site_settings():
+    s = get_site_settings()
+    # Only expose safe fields to public
+    return jsonify({
+        "primary_color": s.get("primary_color","#2B9FD8"),
+        "hero_font":     s.get("hero_font","default"),
+        "model_path":    s.get("model_path","sneaker.glb"),
+        "model_scale":   s.get("model_scale",3.0),
+        "model_y":       s.get("model_y",0.8),
+        "model_speed":   s.get("model_speed",0.006),
+    })
+
 
 # ── ADMIN API ─────────────────────────────────────────────────────────────────
 
@@ -297,6 +351,34 @@ def api_save_offer():
              "text_color": data.get("text_color","#ffffff")}
     set_offer(offer)
     return jsonify({"success": True, "offer": offer})
+
+@app.route("/api/admin/site-settings", methods=["GET"])
+@admin_required
+def api_get_site_settings():
+    return jsonify(get_site_settings())
+
+@app.route("/api/admin/site-settings", methods=["POST"])
+@admin_required
+def api_save_site_settings():
+    if not USE_DB: return jsonify({"error": "No database"}), 503
+    data = request.get_json(force=True)
+    allowed_keys = {"primary_color","hero_font","model_path","model_scale","model_y","model_speed"}
+    clean = {k: v for k, v in data.items() if k in allowed_keys}
+    save_site_settings(clean)
+    return jsonify({"success": True, "settings": clean})
+
+@app.route("/api/admin/upload-model", methods=["POST"])
+@admin_required
+def api_upload_model():
+    if "model" not in request.files:
+        return jsonify({"error": "No file"}), 400
+    file = request.files["model"]
+    if not file or not file.filename.lower().endswith(".glb"):
+        return jsonify({"error": "Only .glb files allowed"}), 400
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(STATIC_DIR, filename)
+    file.save(filepath)
+    return jsonify({"success": True, "path": filename, "url": f"/static/{filename}"})
 
 
 # ── ORDERS ────────────────────────────────────────────────────────────────────
