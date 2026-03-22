@@ -390,12 +390,28 @@ function toggleAddressForm() {
 
 /* =================================================
    THREE.JS 3D SNEAKER SCENE (HOMEPAGE ONLY)
+   Settings loaded from /api/site-settings
 ================================================= */
 const container = document.getElementById("sneaker-container");
 
 if (container) {
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    fetch("/api/site-settings")
+        .then(r => r.json())
+        .catch(() => ({}))
+        .then(cfg => initThreeScene(cfg));
+}
+
+function initThreeScene(cfg) {
+    const container = document.getElementById("sneaker-container");
+    if (!container) return;
+
+    const MODEL_PATH  = "/static/" + (cfg.model_path  || "sneaker.glb");
+    const MODEL_SCALE = parseFloat(cfg.model_scale)   || 3;
+    const MODEL_Y     = parseFloat(cfg.model_y)       || 0.8;
+    const MODEL_SPEED = parseFloat(cfg.model_speed)   || 0.006;
+
+    const scene    = new THREE.Scene();
+    const camera   = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, precision: "mediump" });
 
     renderer.setSize(container.clientWidth, container.clientHeight);
@@ -410,20 +426,24 @@ if (container) {
     let sneaker;
     const loader = new THREE.GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder);
-    loader.load("/static/sneaker.glb",
-        gltf => { sneaker = gltf.scene; sneaker.scale.set(3, 3, 3); scene.add(sneaker); },
+    loader.load(MODEL_PATH,
+        gltf => {
+            sneaker = gltf.scene;
+            sneaker.scale.set(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
+            scene.add(sneaker);
+        },
         undefined,
         err => console.error("Model loading error:", err)
     );
 
-    camera.position.set(0, 0.8, 12);
+    camera.position.set(0, MODEL_Y, 12);
     let introAnimation = true, introProgress = 0, floatTime = 0;
     let mouseX = 0, mouseY = 0;
 
     document.addEventListener("mousemove", e => {
         const rect = container.getBoundingClientRect();
         mouseX = ((e.clientX - rect.left) / rect.width) - 0.5;
-        mouseY = ((e.clientY - rect.top) / rect.height) - 0.5;
+        mouseY = ((e.clientY - rect.top)  / rect.height) - 0.5;
     });
 
     function animate() {
@@ -432,13 +452,13 @@ if (container) {
             if (introAnimation) {
                 introProgress += 0.02;
                 camera.position.z = 12 - introProgress * 8;
-                sneaker.rotation.y += 0.006;
+                sneaker.rotation.y += MODEL_SPEED;
                 if (camera.position.z <= 4) { camera.position.z = 4; introAnimation = false; }
             } else {
-                sneaker.rotation.y += 0.001 + mouseX * 0.02;
-                sneaker.rotation.x = -mouseY * 0.2;
+                sneaker.rotation.y += MODEL_SPEED * 0.17 + mouseX * 0.02;
+                sneaker.rotation.x  = -mouseY * 0.2;
                 floatTime += 0.03;
-                sneaker.position.y = Math.sin(floatTime) * 0.15;
+                sneaker.position.y  = Math.sin(floatTime) * 0.15;
             }
         }
         renderer.render(scene, camera);
