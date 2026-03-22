@@ -28,17 +28,6 @@
 </head>
 <body>
 
-    {% if site_settings.offer and site_settings.offer.active and site_settings.offer.text %}
-    <div id="offer-ribbon" style="background:{{ site_settings.offer.bg_color }};color:{{ site_settings.offer.text_color }};padding:9px 0;overflow:hidden;position:relative;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-        <div style="display:inline-flex;animation:ribbonScroll 18s linear infinite;white-space:nowrap;">
-            {% for i in range(8) %}
-            <span style="padding:0 48px;font-size:0.88rem;font-weight:700;letter-spacing:0.3px;">{{ site_settings.offer.text }}<span style="margin:0 12px;opacity:0.4;">✦</span></span>
-            {% endfor %}
-        </div>
-        <style>@keyframes ribbonScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}</style>
-    </div>
-    {% endif %}
-
     <a href="https://wa.me/918606466821" class="whatsapp-btn" target="_blank" aria-label="Chat on WhatsApp">
         <img src="{{ url_for('static', filename='logo/whatsapp.png') }}" alt="WhatsApp">
     </a>
