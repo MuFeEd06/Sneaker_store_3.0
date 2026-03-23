@@ -552,6 +552,45 @@ function buildStars(score, size = "sm") {
     return html;
 }
 
+
+/* =================================================
+   DEAL PRICE GENERATOR
+   Deterministic per product so same shoe = same deal every visit.
+   Returns null if no deal, or { dealPrice, origPrice, pct, label }
+================================================= */
+function getDeal(shoe) {
+    // ~40% of products get a deal, seeded by id
+    const seed1 = (shoe.id * 3571 + 12345) % 10;
+    if (seed1 >= 4) return null;  // 60% no deal
+
+    const orig = shoe.price;
+
+    // Generate deal price: always > orig, but capped at orig + 5000
+    // Shown as "MRP" (original higher price) with current as discounted
+    const seed2  = (shoe.id * 7919 + 54321) % 233280;
+    const markup = 800 + Math.floor((seed2 / 233280) * 4200); // 800–5000 above price
+    const mrp    = orig + markup;
+
+    // Calculate % off
+    const pct = Math.round((markup / mrp) * 100);
+
+    // Label variety
+    const labels = ["Limited Deal", "Flash Sale", "Today Only", "Hot Deal", "Special Price"];
+    const label  = labels[(shoe.id * 13) % labels.length];
+
+    return { dealPrice: orig, origPrice: mrp, pct, label };
+}
+
+function formatDeal(deal) {
+    if (!deal) return "";
+    return `
+        <div class="deal-wrap">
+            <span class="deal-original">${formatPrice(deal.origPrice)}</span>
+            <span class="deal-tag">${deal.pct}% OFF</span>
+            <span class="deal-tag deal-tag-green">${deal.label}</span>
+        </div>`;
+}
+
 function buildProductCard(shoe) {
     const { score, count } = getRating(shoe.id);
     return `
@@ -566,6 +605,7 @@ function buildProductCard(shoe) {
                 <span class="card-rating-score">${score} (${count})</span>
             </div>
             <span class="price">${formatPrice(shoe.price)}</span>
+            ${formatDeal(getDeal(shoe))}
             <button onclick="openProduct(${shoe.id})">View Product</button>
         </div>
     </div>`;
@@ -762,6 +802,17 @@ async function loadProductPage() {
         nameEl.innerText  = shoe.name;
         priceEl.innerText = formatPrice(shoe.price);
         imgEl.src         = shoe.image;
+
+        // Show deal price on product page if applicable
+        const deal = getDeal(shoe);
+        const existingDeal = document.getElementById("product-deal-wrap");
+        if (deal) {
+            const dealEl = document.createElement("div");
+            dealEl.id = "product-deal-wrap";
+            dealEl.innerHTML = formatDeal(deal);
+            dealEl.style.marginBottom = "8px";
+            priceEl.insertAdjacentElement("afterend", dealEl);
+        }
         imgEl.onerror     = () => imgEl.src = "https://placehold.co/400x300/eaf3fa/2B9FD8?text=No+Image";
 
         // Update page title
@@ -785,8 +836,16 @@ async function loadProductPage() {
 
         const sizeSelect = document.getElementById("size-select");
         if (sizeSelect && shoe.sizes) {
+            // Build UK + Euro size options
+            const ukToEuro = {
+                "UK 4":"EU 37","UK 5":"EU 38","UK 6":"EU 39","UK 7":"EU 41",
+                "UK 8":"EU 42","UK 9":"EU 43","UK 10":"EU 44","UK 11":"EU 45","UK 12":"EU 47"
+            };
             sizeSelect.innerHTML = `<option value="">Select Size</option>`;
-            shoe.sizes.forEach(s => { sizeSelect.innerHTML += `<option>${s}</option>`; });
+            shoe.sizes.forEach(s => {
+                const euro = ukToEuro[s] ? ` / ${ukToEuro[s]}` : "";
+                sizeSelect.innerHTML += `<option value="${s}">${s}${euro}</option>`;
+            });
         }
 
         // Render similar products
