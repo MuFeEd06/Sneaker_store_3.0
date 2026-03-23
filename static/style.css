@@ -2,9 +2,8 @@
    ROOT VARIABLES & GLOBAL RESET
    ================================================= */
 :root {
-    /* --primary, --primary-dark, --primary-light, --glass-border,
-       --shadow, --shadow-hover are injected by base.html from DB settings.
-       Only static values that never change live here. */
+    /* Primary colour vars are injected by base.html AFTER this file loads.
+       Only static, never-changing vars live here. */
     --bg:            #f4f8fb;
     --surface:       #ffffff;
     --surface-2:     #eaf3fa;
@@ -15,13 +14,14 @@
     --text-light:    #9badb8;
     --border:        #d0e6f5;
     --transition:    0.3s ease;
-    /* Fallbacks in case base.html hasn't run yet */
+    /* Safe fallbacks — overridden by base.html theme-override block */
     --primary:       #2B9FD8;
     --primary-dark:  #1a7ab0;
     --primary-light: #e8f5fd;
     --glass-border:  rgba(43,159,216,0.18);
     --shadow:        0 4px 24px rgba(43,159,216,0.10);
     --shadow-hover:  0 8px 32px rgba(43,159,216,0.22);
+    --hero-font:     system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
