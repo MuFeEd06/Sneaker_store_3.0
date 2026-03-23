@@ -524,8 +524,8 @@
         <div class="form-group full">
             <label>Sizes</label>
             <div class="sizes-wrap" id="sizes-wrap">
-                {% for s in ["UK 5","UK 6","UK 7","UK 8","UK 9","UK 10","UK 11","UK 12"] %}
-                <div class="size-chip" onclick="toggleSize(this)" data-size="{{ s }}">{{ s }}</div>
+                {% for s, e in [("UK 5","EU 38"),("UK 6","EU 39"),("UK 7","EU 41"),("UK 8","EU 42"),("UK 9","EU 43"),("UK 10","EU 44"),("UK 11","EU 45"),("UK 12","EU 47")] %}
+                <div class="size-chip" onclick="toggleSize(this)" data-size="{{ s }}" title="{{ s }} / {{ e }}">{{ s }}<span style="font-size:0.65rem;opacity:0.6;display:block;line-height:1;">{{ e }}</span></div>
                 {% endfor %}
             </div>
         </div>
