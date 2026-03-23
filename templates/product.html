@@ -4,18 +4,40 @@
 {% block content %}
 
 <!-- NAVBAR -->
-<header class="navbar">
+<header>
     <div class="logo-container">
         <a href="/" style="text-decoration:none;">
             <h1 class="logo" style="font-size:1.3rem;">Claxxic India</h1>
         </a>
         <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Sneaker Logo">
     </div>
-    <nav class="nav-links">
+
+    <input type="checkbox" id="menu-toggle" class="menu-toggle">
+    <label for="menu-toggle" class="hamburger">
+        <span></span><span></span><span></span>
+    </label>
+
+    <nav class="nav-menu">
         <a href="/">Home</a>
         <a href="/#collections">Collections</a>
-        <a href="/cart">🛒 Cart (<span id="cart-count">0</span>)</a>
+        <a href="/#shop">Shop</a>
+        <a href="#">Contact</a>
     </nav>
+
+    <!-- Global Search -->
+    <div class="header-search" id="header-search-wrap">
+        <input type="text" class="header-search-input" id="header-search"
+               placeholder="Search sneakers..."
+               autocomplete="off"
+               oninput="handleHeaderSearch(this.value)"
+               onkeydown="if(event.key==='Enter')submitHeaderSearch()">
+        <button class="header-search-btn" onclick="submitHeaderSearch()">🔍</button>
+        <div class="search-dropdown" id="search-dropdown"></div>
+    </div>
+
+    <div class="floating-cart" onclick="window.location.href='/cart'" style="cursor:pointer">
+        🛒 <span id="cart-count">0</span>
+    </div>
 </header>
 
 <!-- PRODUCT SECTION -->
