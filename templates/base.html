@@ -13,37 +13,39 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    {# ── THEME OVERRIDE — loaded AFTER style.css so it always wins ── #}
+    {# Theme override — loaded AFTER style.css so it always wins #}
     <style id="theme-override">
         :root {
-            --primary:       {{ site_settings.theme.primary }} !important;
-            --primary-dark:  {{ site_settings.theme.primary_dark }} !important;
-            --primary-light: {{ site_settings.theme.primary_light }} !important;
-            --glass-border:  {{ site_settings.theme.rgba_018 }} !important;
-            --shadow:        0 4px 24px {{ site_settings.theme.rgba_010 }} !important;
-            --shadow-hover:  0 8px 32px {{ site_settings.theme.rgba_022 }} !important;
-            --hero-font:     {{ ("'" + site_settings.hero_font + "', ") if site_settings.hero_font and site_settings.hero_font != 'default' else '' }}system-ui, sans-serif !important;
+            --primary:       {{ site_settings.theme.primary }};
+            --primary-dark:  {{ site_settings.theme.primary_dark }};
+            --primary-light: {{ site_settings.theme.primary_light }};
+            --glass-border:  {{ site_settings.theme.rgba_018 }};
+            --shadow:        0 4px 24px {{ site_settings.theme.rgba_010 }};
+            --shadow-hover:  0 8px 32px {{ site_settings.theme.rgba_022 }};
+            --hero-font:     {{ ("'" + site_settings.hero_font + "', ") if site_settings.hero_font and site_settings.hero_font != 'default' else '' }}system-ui, sans-serif;
         }
-        /* Force primary colour on key elements in case var() doesn't cascade */
-        a, .logo, .floating-cart, .section-title,
-        .card button, .brand-tile:hover,
-        .card-price, .price, .nav-link.active {
+        /* Explicit overrides for elements that don't inherit vars cleanly */
+        .card button {
+            background: {{ site_settings.theme.primary }};
+            border-color: {{ site_settings.theme.primary }};
+            color: #ffffff !important;
+        }
+        .card button:hover {
+            background: {{ site_settings.theme.primary_dark }};
+            border-color: {{ site_settings.theme.primary_dark }};
+            color: #ffffff !important;
+        }
+        .price, .card-price, .section-title, .logo,
+        .floating-cart, .brand-tile:hover .brand-tile-arrow {
             color: {{ site_settings.theme.primary }};
         }
-        .card button, .btn, button[type="submit"],
-        .nav-btn.primary, .btn-save, .hero-cta {
-            background: {{ site_settings.theme.primary }} !important;
-            border-color: {{ site_settings.theme.primary }} !important;
-        }
-        .card button:hover, .btn:hover, .hero-cta:hover {
-            background: {{ site_settings.theme.primary_dark }} !important;
-        }
         header {
+            border-bottom-color: {{ site_settings.theme.rgba_018 }};
             box-shadow: 0 2px 16px {{ site_settings.theme.rgba_008 }};
         }
         {% if site_settings.hero_font and site_settings.hero_font != 'default' %}
         .hero-headline, .hero-eyebrow, .hero-sub, .hero-cta {
-            font-family: '{{ site_settings.hero_font }}', system-ui, sans-serif !important;
+            font-family: '{{ site_settings.hero_font }}', system-ui, sans-serif;
         }
         {% endif %}
     </style>

@@ -939,3 +939,80 @@ document.addEventListener("DOMContentLoaded", () => {
     if (onProduct) loadProductPage();
     if (onCart)    renderCartPage();
 });
+
+/* =================================================
+   GLOBAL HEADER SEARCH
+================================================= */
+let _searchTimer = null;
+
+async function handleHeaderSearch(q) {
+    const dropdown = document.getElementById('search-dropdown');
+    if (!dropdown) return;
+
+    q = q.trim();
+    if (q.length < 2) {
+        dropdown.classList.remove('open');
+        dropdown.innerHTML = '';
+        return;
+    }
+
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(async () => {
+        try {
+            const res  = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+            renderSearchDropdown(data, q);
+        } catch(e) {
+            dropdown.classList.remove('open');
+        }
+    }, 220);
+}
+
+function renderSearchDropdown(results, q) {
+    const dropdown = document.getElementById('search-dropdown');
+    if (!dropdown) return;
+
+    if (!results || results.length === 0) {
+        dropdown.innerHTML = `<div class="search-no-results">No results for "<strong>${q}</strong>"</div>`;
+        dropdown.classList.add('open');
+        return;
+    }
+
+    dropdown.innerHTML = results.slice(0, 6).map(p => `
+        <div class="search-result-item" onclick="openProduct(${p.id})">
+            <img class="search-result-img"
+                 src="${p.image}"
+                 alt="${p.name}"
+                 onerror="this.src='https://placehold.co/40x40/eaf3fa/2B9FD8?text=👟'">
+            <div class="search-result-info">
+                <span class="search-result-name">${p.name}</span>
+                <span class="search-result-brand">${p.brand}</span>
+            </div>
+            <span class="search-result-price">${formatPrice(p.price)}</span>
+        </div>
+    `).join('');
+    dropdown.classList.add('open');
+}
+
+function submitHeaderSearch() {
+    const q = document.getElementById('header-search')?.value.trim();
+    if (!q) return;
+    window.location.href = `/brand?q=${encodeURIComponent(q)}`;
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+    const wrap = document.getElementById('header-search-wrap');
+    if (wrap && !wrap.contains(e.target)) {
+        const dd = document.getElementById('search-dropdown');
+        if (dd) dd.classList.remove('open');
+    }
+});
+
+// Pre-fill search if coming from search redirect
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    const input = document.getElementById('header-search');
+    if (q && input) input.value = q;
+});
