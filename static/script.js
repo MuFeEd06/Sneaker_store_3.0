@@ -32,7 +32,7 @@ function getBrandConfig(name) {
    CART SYSTEM — localStorage persistence
 ================================================= */
 
-const WHATSAPP_NUMBER = "918606466821"; // ← change to your number
+const WHATSAPP_NUMBER = "919645087584"; // ← change to your number
 
 function getCart() {
     return JSON.parse(localStorage.getItem("claxxic_cart") || "[]");
@@ -604,6 +604,7 @@ async function renderBrandPage() {
 
     const params    = new URLSearchParams(window.location.search);
     const brandName = params.get("brand") || "";
+    const searchQ   = params.get("q") || "";   // from global search
     const brandCfg  = getBrandConfig(brandName);
 
     document.title = `${brandName} — Claxxic India`;
@@ -626,14 +627,45 @@ async function renderBrandPage() {
 
     try {
         const products = await fetchProducts();
-        const filtered = products.filter(p => p.brand.toLowerCase() === brandName.toLowerCase());
+        // Normalize function — strips spaces/special chars, lowercases
+        function norm(s) { return s.toLowerCase().replace(/[^a-z0-9]/g, ""); }
 
-        if (countEl) countEl.textContent = filtered.length;
+        let filtered = [];
+        let pageTitle = brandName;
+
+        if (searchQ) {
+            // Global search mode — fuzzy match name OR brand
+            const q = norm(searchQ);
+            filtered = products.filter(p =>
+                norm(p.name).includes(q) ||
+                norm(p.brand).includes(q) ||
+                p.name.toLowerCase().includes(searchQ.toLowerCase()) ||
+                p.brand.toLowerCase().includes(searchQ.toLowerCase())
+            );
+            pageTitle = `Search: "${searchQ}"`;
+            if (titleEl) titleEl.textContent = searchQ;
+            if (sectionTitle) sectionTitle.textContent = `Results for "${searchQ}"`;
+            if (countEl) countEl.textContent = filtered.length;
+            // Update monogram for search mode
+            if (monogramEl) {
+                monogramEl.style.background = "rgba(43,159,216,0.12)";
+                monogramEl.style.border = "1px solid rgba(43,159,216,0.3)";
+                monogramEl.innerHTML = `<span style="font-size:2rem;">🔍</span>`;
+            }
+            document.title = `${searchQ} — Claxxic India`;
+        } else {
+            // Brand page mode — fuzzy match brand name
+            const qb = norm(brandName);
+            filtered = products.filter(p => norm(p.brand) === qb || norm(p.brand).includes(qb));
+            pageTitle = brandName;
+        }
+
+        if (countEl && !searchQ) countEl.textContent = filtered.length;
 
         grid.innerHTML = "";
         if (filtered.length === 0) {
             grid.innerHTML = `<p style="color:#bbb;text-align:center;grid-column:1/-1;padding:60px;">
-                No products found for ${brandName}.
+                No products found for "${searchQ || brandName}". Try a different search.
             </p>`;
             return;
         }
@@ -969,12 +1001,12 @@ async function handleHeaderSearch(q) {
 }
 
 function renderSearchDropdown(results, q) {
-    const dropdown = document.getElementById('search-dropdown');
+    const dropdown = document.getElementById("search-dropdown");
     if (!dropdown) return;
 
     if (!results || results.length === 0) {
         dropdown.innerHTML = `<div class="search-no-results">No results for "<strong>${q}</strong>"</div>`;
-        dropdown.classList.add('open');
+        dropdown.classList.add("open");
         return;
     }
 
@@ -991,13 +1023,26 @@ function renderSearchDropdown(results, q) {
             <span class="search-result-price">${formatPrice(p.price)}</span>
         </div>
     `).join('');
-    dropdown.classList.add('open');
+
+    // Add "See all results" footer
+    dropdown.innerHTML += `<div class="search-result-item" style="border-top:1px solid var(--border);justify-content:center;color:var(--primary);font-weight:700;font-size:0.82rem;" onclick="submitHeaderSearch()">
+        See all results for "${q}" →
+    </div>`;
+
+    dropdown.classList.add("open");
 }
 
 function submitHeaderSearch() {
-    const q = document.getElementById('header-search')?.value.trim();
+    const q = document.getElementById("header-search")?.value.trim();
     if (!q) return;
-    window.location.href = `/brand?q=${encodeURIComponent(q)}`;
+    // Check if q exactly matches a brand name (fuzzy)
+    function norm(s) { return s.toLowerCase().replace(/[^a-z0-9]/g, ""); }
+    const match = BRANDS.find(b => norm(b.name) === norm(q));
+    if (match) {
+        window.location.href = `/brand?brand=${encodeURIComponent(match.slug)}`;
+    } else {
+        window.location.href = `/brand?q=${encodeURIComponent(q)}`;
+    }
 }
 
 // Close dropdown when clicking outside
