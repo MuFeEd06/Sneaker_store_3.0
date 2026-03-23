@@ -440,7 +440,7 @@
         {% for p in products %}
         <div class="product-card" data-id="{{ p.id }}" data-name="{{ p.name | lower }}" data-brand="{{ p.brand }}">
             <div class="card-img-wrap">
-                <img src="/static/{{ p.image }}" alt="{{ p.name }}"
+                <img src="{{ p.image if p.image and p.image.startswith('http') else ('/static/' + p.image if p.image else '') }}" alt="{{ p.name }}"
                      onerror="this.src='https://placehold.co/300x160/eaf3fa/2B9FD8?text=No+Image'">
                 {% if p.tag %}<span class="card-tag">{{ p.tag }}</span>{% endif %}
             </div>
@@ -656,7 +656,8 @@ function openEditModal(product) {
     if (product.image) {
         pathEl.textContent = product.image;
         const prev = document.getElementById("f-image-preview");
-        prev.src = "/static/" + product.image;
+        // Supabase URLs are already absolute (https://...), local paths need /static/ prefix
+        prev.src = product.image.startsWith("http") ? product.image : "/static/" + product.image;
         prev.style.display = "block";
     }
 
@@ -749,6 +750,9 @@ function addColorRow(data = {}) {
     const row  = document.createElement("div");
     row.className = "color-row";
     row.id        = `color-row-${id}`;
+    const imgSrc = data.image
+        ? (data.image.startsWith("http") ? data.image : "/static/" + data.image)
+        : "";
     row.innerHTML = `
         <input type="color" value="${data.hex || '#2B9FD8'}"
                id="cr-hex-${id}" title="Pick color">
@@ -756,8 +760,9 @@ function addColorRow(data = {}) {
                id="cr-name-${id}" placeholder="Color name">
         <input type="number" value="${data.price || ''}"
                id="cr-price-${id}" placeholder="Price (₹)">
-        <label class="color-img-btn" title="${data.image || 'No image'}">
-            ${data.image ? '✅ Image' : '📷 Image'}
+        <label class="color-img-btn" id="cr-img-label-${id}" title="${data.image || 'No image'}"
+               style="${imgSrc ? 'background:url(' + imgSrc + ') center/cover;color:transparent;border:2px solid #2B9FD8;' : ''}">
+            ${data.image ? '' : '📷 Upload'}
             <input type="file" accept="image/*"
                    onchange="uploadColorImage(this, ${id})">
         </label>
@@ -790,7 +795,11 @@ async function uploadColorImage(input, rowId) {
         const data = await res.json();
         if (data.success) {
             document.getElementById(`cr-img-${rowId}`).value = data.path;
-            input.parentElement.innerHTML = `✅ Image<input type="file" accept="image/*" onchange="uploadColorImage(this, ${rowId})">`;
+            const lbl = document.getElementById(`cr-img-label-${rowId}`);
+            if (lbl) {
+                lbl.style.cssText = `background:url(${data.url}) center/cover;color:transparent;border:2px solid #2B9FD8;`;
+                lbl.innerHTML = `<input type="file" accept="image/*" onchange="uploadColorImage(this, ${rowId})">`;
+            }
             showToast("Color image uploaded!");
         } else {
             showToast(data.error || "Upload failed", false);
