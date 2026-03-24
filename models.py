@@ -1,6 +1,5 @@
 """
-Claxxic India — Database Models (Supabase / PostgreSQL)
-Uses SQLAlchemy — connect via DATABASE_URL environment variable
+Claxxic India — Database Models
 """
 
 from flask_sqlalchemy import SQLAlchemy
@@ -19,26 +18,47 @@ class Product(db.Model):
     price   = db.Column(db.Integer,     nullable=False)
     image   = db.Column(db.String(300), nullable=True)
     tag     = db.Column(db.String(50),  nullable=True, default="")
-    # sizes and colors stored as JSON strings
     sizes   = db.Column(db.Text, nullable=True, default="[]")
     colors  = db.Column(db.Text, nullable=True, default="[]")
+    # ── INVENTORY ────────────────────────────────────────────────
+    # stock: JSON dict mapping "colorName|size" → qty, e.g.
+    #   {"default|UK 8": 5, "Black|UK 7": 3, "White|UK 9": 0}
+    # "default" used when product has no colour variants
+    stock   = db.Column(db.Text, nullable=True, default="{}")
+
+    def get_stock(self):
+        try: return json.loads(self.stock or "{}")
+        except: return {}
+
+    def set_stock(self, d):
+        self.stock = json.dumps(d)
+
+    def total_stock(self):
+        return sum(self.get_stock().values())
+
+    def is_out_of_stock(self):
+        s = self.get_stock()
+        return len(s) > 0 and all(v <= 0 for v in s.values())
 
     def to_dict(self):
+        stock = self.get_stock()
         return {
-            "id":     self.id,
-            "name":   self.name,
-            "brand":  self.brand,
-            "price":  self.price,
-            "image":  self.image,
-            "tag":    self.tag or "",
-            "sizes":  json.loads(self.sizes  or "[]"),
-            "colors": json.loads(self.colors or "[]"),
+            "id":             self.id,
+            "name":           self.name,
+            "brand":          self.brand,
+            "price":          self.price,
+            "image":          self.image,
+            "tag":            self.tag or "",
+            "sizes":          json.loads(self.sizes  or "[]"),
+            "colors":         json.loads(self.colors or "[]"),
+            "stock":          stock,
+            "total_stock":    sum(stock.values()) if stock else None,
+            "out_of_stock":   self.is_out_of_stock(),
         }
 
 
 class Setting(db.Model):
     __tablename__ = "settings"
-
     key   = db.Column(db.String(100), primary_key=True)
     value = db.Column(db.Text, nullable=True)
 
