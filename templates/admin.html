@@ -67,6 +67,13 @@
         .stat-card.confirmed .value { color: #4299e1; }
         .stat-card.shipped .value { color: #9f7aea; }
         .stat-card.delivered .value { color: #48bb78; }
+        .stat-sub {
+            font-size: 0.72rem;
+            color: #9badb8;
+            margin-top: 5px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
 
         /* ── FILTERS ── */
         .filters {
@@ -285,23 +292,28 @@
     <div class="stats-grid">
         <div class="stat-card">
             <div class="label">Total Orders</div>
-            <div class="value">{{ total_orders }}</div>
+            <div class="value" id="sc-total-orders">{{ total_orders }}</div>
+            <div class="stat-sub"><span id="sc-cancelled">{{ cancelled }}</span> cancelled</div>
         </div>
         <div class="stat-card revenue">
-            <div class="label">Total Revenue</div>
-            <div class="value">{{ total_rev }}</div>
+            <div class="label">Confirmed Revenue</div>
+            <div class="value" id="sc-total-rev">{{ total_rev }}</div>
+            <div class="stat-sub">Confirmed + Shipped + Delivered only</div>
         </div>
         <div class="stat-card pending">
-            <div class="label">Pending</div>
-            <div class="value">{{ pending }}</div>
+            <div class="label">Pending Revenue</div>
+            <div class="value" id="sc-pending-rev">{{ pending_rev }}</div>
+            <div class="stat-sub"><span id="sc-pending">{{ pending }}</span> orders awaiting</div>
         </div>
         <div class="stat-card shipped">
             <div class="label">Shipped</div>
-            <div class="value">{{ shipped }}</div>
+            <div class="value" id="sc-shipped">{{ shipped }}</div>
+            <div class="stat-sub"><span id="sc-confirmed">{{ confirmed }}</span> confirmed</div>
         </div>
         <div class="stat-card delivered">
             <div class="label">Delivered</div>
-            <div class="value">{{ delivered }}</div>
+            <div class="value" id="sc-delivered">{{ delivered }}</div>
+            <div class="stat-sub" id="sc-cancelled-rev" style="color:#e53e3e;">{{ cancelled }} cancelled · {{ cancelled_rev }}</div>
         </div>
     </div>
 
@@ -420,11 +432,22 @@
                 btn.classList.add("saved");
                 setTimeout(() => { btn.textContent = "Update Status"; btn.classList.remove("saved"); }, 2000);
 
-                // Update badge in UI without reload
-                const card   = document.getElementById("order-" + orderId);
-                const badge  = card.querySelector(".status-badge");
-                badge.className = "status-badge status-" + status;
+                // ── Update order status badge in-place ──
+                const card  = document.getElementById("order-" + orderId);
+                const badge = card.querySelector(".status-badge");
+                badge.className   = "status-badge status-" + status;
                 badge.textContent = status;
+
+                // ── Live-update all stat cards without reload ──
+                liveUpdate("sc-total-rev",     data.total_rev);
+                liveUpdate("sc-pending-rev",   data.pending_rev);
+                liveUpdate("sc-pending",       data.pending);
+                liveUpdate("sc-confirmed",     data.confirmed);
+                liveUpdate("sc-shipped",       data.shipped);
+                liveUpdate("sc-delivered",     data.delivered);
+                liveUpdate("sc-cancelled",     data.cancelled);
+                liveUpdate("sc-cancelled-rev", `${data.cancelled} cancelled · ${data.cancelled_rev}`);
+
                 showToast(`Order #${String(orderId).padStart(4,"0")} → ${status}`);
             } else {
                 showToast("Failed to update", false);
@@ -432,6 +455,15 @@
         } catch (e) {
             showToast("Error: " + e.message, false);
         }
+    }
+
+    function liveUpdate(id, value) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = value;
+        el.style.transition = "color 0.15s";
+        el.style.color = "#2B9FD8";
+        setTimeout(() => { el.style.color = ""; }, 900);
     }
 
     async function saveNotes(orderId) {
