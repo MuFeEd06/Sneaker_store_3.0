@@ -371,18 +371,22 @@
         <!-- Overlay content -->
         <div class="hero-overlay">
             <div class="hero-panel">
-                <div class="hero-eyebrow">New Collection 2026</div>
+                <div class="hero-eyebrow" style="color:{{ site_settings.hero_eyebrow_color or '#2B9FD8' }}">
+                    {{ site_settings.hero_eyebrow or 'New Collection 2026' }}
+                </div>
 
-                <h2 class="hero-headline">
-                    Step Into<br><span>Premium</span><br>Comfort
+                <h2 class="hero-headline" style="color:{{ site_settings.hero_text_color or '#ffffff' }}">
+                    {{ site_settings.hero_headline or 'Step Into' }}<br>
+                    <span style="color:{{ site_settings.primary_color or '#2B9FD8' }}">{{ site_settings.hero_highlight or 'Premium' }}</span><br>
+                    {{ site_settings.hero_headline2 or 'Comfort' }}
                 </h2>
 
-                <p class="hero-sub">
-                    Handpicked sneakers from the world's top brands — Nike, Adidas, New Balance and more. Delivered across India.
+                <p class="hero-sub" style="color:{{ site_settings.hero_sub_color or 'rgba(255,255,255,0.72)' }}">
+                    {{ site_settings.hero_sub or 'Handpicked sneakers from the world's top brands. Delivered across India.' }}
                 </p>
 
                 <a class="hero-cta" href="/#shop">
-                    Shop Now
+                    {{ site_settings.hero_cta or 'Shop Now' }}
                     <span class="hero-cta-arrow">→</span>
                 </a>
 
