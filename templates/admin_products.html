@@ -375,56 +375,6 @@
                 </select>
             </div>
         </div>
-
-        <!-- Hero Text Editor -->
-        <div style="border-top:1px solid #eaf3fa;padding-top:18px;margin-top:4px;">
-            <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#9badb8;margin-bottom:14px;">Hero Text</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Eyebrow Text</label>
-                    <input type="text" id="ss-eyebrow" placeholder="New Collection 2026"
-                           style="padding:8px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;background:#f4f8fb;color:#1a1a2e;outline:none;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Eyebrow Colour</label>
-                    <input type="color" id="ss-eyebrow-color" value="#2B9FD8" style="width:48px;height:36px;border:1.5px solid #d0e6f5;border-radius:8px;cursor:pointer;padding:2px;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Headline Line 1</label>
-                    <input type="text" id="ss-headline" placeholder="Step Into"
-                           style="padding:8px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;background:#f4f8fb;color:#1a1a2e;outline:none;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Highlighted Word</label>
-                    <input type="text" id="ss-highlight" placeholder="Premium"
-                           style="padding:8px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;background:#f4f8fb;color:#1a1a2e;outline:none;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Headline Line 2</label>
-                    <input type="text" id="ss-headline2" placeholder="Comfort"
-                           style="padding:8px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;background:#f4f8fb;color:#1a1a2e;outline:none;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">CTA Button Text</label>
-                    <input type="text" id="ss-cta" placeholder="Shop Now"
-                           style="padding:8px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;background:#f4f8fb;color:#1a1a2e;outline:none;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;grid-column:1/-1;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Subtext</label>
-                    <input type="text" id="ss-sub" placeholder="Handpicked sneakers from the world's top brands..."
-                           style="padding:8px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;background:#f4f8fb;color:#1a1a2e;outline:none;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Text Colour</label>
-                    <input type="color" id="ss-text-color" value="#ffffff" style="width:48px;height:36px;border:1.5px solid #d0e6f5;border-radius:8px;cursor:pointer;padding:2px;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Subtext Colour</label>
-                    <input type="color" id="ss-sub-color" value="#b8d4e8" style="width:48px;height:36px;border:1.5px solid #d0e6f5;border-radius:8px;cursor:pointer;padding:2px;">
-                </div>
-            </div>
-        </div>
-
         <div style="border-top:1px solid #eaf3fa;padding-top:18px;">
             <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#9badb8;margin-bottom:14px;">3D Model</div>
             <div class="offer-row" style="align-items:flex-start;gap:24px;">
@@ -584,26 +534,6 @@
             <label>Color Variants <span style="color:#9badb8;font-size:0.75rem;">(optional — each can have its own price + image)</span></label>
             <div class="colors-list" id="colors-list"></div>
             <button type="button" class="add-color-btn" onclick="addColorRow()">+ Add Color Variant</button>
-        </div>
-
-        <!-- INVENTORY -->
-        <div class="form-group full" id="inventory-section">
-            <label style="display:flex;align-items:center;gap:8px;">
-                📦 Inventory
-                <span style="font-size:0.72rem;color:#9badb8;font-weight:400;">(stock per colour × size — leave blank = unlimited)</span>
-            </label>
-            <div id="inventory-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:8px;">
-                <div style="color:#9badb8;font-size:0.82rem;padding:8px;">
-                    Save sizes & colours first, then reopen to manage stock.
-                </div>
-            </div>
-            <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-                <button type="button" onclick="setAllStock()" style="padding:7px 14px;background:#eaf3fa;color:#2B9FD8;border:1.5px solid #2B9FD8;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;">
-                    🔢 Set all to same qty
-                </button>
-                <input type="number" id="bulk-stock-val" placeholder="e.g. 10" min="0"
-                       style="padding:7px 10px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.82rem;width:80px;outline:none;">
-            </div>
         </div>
 
     </div>
@@ -1006,25 +936,9 @@ function initSiteSettings() {
                 document.getElementById('ss-y-val').textContent = parseFloat(s.model_y).toFixed(1);
             }
             if (s.model_speed !== undefined) {
-                document.getElementById("ss-speed").value = s.model_speed;
-                document.getElementById("ss-speed-val").textContent = parseFloat(s.model_speed).toFixed(3);
+                document.getElementById('ss-speed').value = s.model_speed;
+                document.getElementById('ss-speed-val').textContent = parseFloat(s.model_speed).toFixed(3);
             }
-            // Hero text fields
-            const heroFields = {
-                "ss-eyebrow":       "hero_eyebrow",
-                "ss-headline":      "hero_headline",
-                "ss-highlight":     "hero_highlight",
-                "ss-headline2":     "hero_headline2",
-                "ss-sub":           "hero_sub",
-                "ss-cta":           "hero_cta",
-                "ss-eyebrow-color": "hero_eyebrow_color",
-                "ss-text-color":    "hero_text_color",
-                "ss-sub-color":     "hero_sub_color",
-            };
-            Object.entries(heroFields).forEach(([elId, key]) => {
-                const el = document.getElementById(elId);
-                if (el && s[key] !== undefined) el.value = s[key];
-            });
         })
         .catch(() => {});
 }
@@ -1061,23 +975,13 @@ async function uploadModel(input) {
 }
 
 async function saveSiteSettings() {
-    const g = id => document.getElementById(id)?.value || "";
     const payload = {
-        primary_color:      g("ss-color"),
-        hero_font:          g("ss-font"),
-        model_path:         g("ss-model-path") || "sneaker.glb",
-        model_scale:        parseFloat(g("ss-scale")),
-        model_y:            parseFloat(g("ss-y")),
-        model_speed:        parseFloat(g("ss-speed")),
-        hero_eyebrow:       g("ss-eyebrow"),
-        hero_headline:      g("ss-headline"),
-        hero_highlight:     g("ss-highlight"),
-        hero_headline2:     g("ss-headline2"),
-        hero_sub:           g("ss-sub"),
-        hero_cta:           g("ss-cta"),
-        hero_eyebrow_color: g("ss-eyebrow-color"),
-        hero_text_color:    g("ss-text-color"),
-        hero_sub_color:     g("ss-sub-color"),
+        primary_color: document.getElementById('ss-color').value,
+        hero_font:     document.getElementById('ss-font').value,
+        model_path:    document.getElementById('ss-model-path').value || 'sneaker.glb',
+        model_scale:   parseFloat(document.getElementById('ss-scale').value),
+        model_y:       parseFloat(document.getElementById('ss-y').value),
+        model_speed:   parseFloat(document.getElementById('ss-speed').value),
     };
     try {
         const res  = await fetch('/api/admin/site-settings', {
@@ -1094,120 +998,6 @@ async function saveSiteSettings() {
 
 // Init on load
 document.addEventListener('DOMContentLoaded', initSiteSettings);
-
-
-/* ── INVENTORY ── */
-
-function buildInventoryGrid(product) {
-    const grid = document.getElementById("inventory-grid");
-    if (!grid) return;
-
-    const sizes  = product.sizes  || [];
-    const colors = product.colors || [];
-    const stock  = product.stock  || {};
-
-    if (sizes.length === 0) {
-        grid.innerHTML = '<div style="color:#9badb8;font-size:0.82rem;padding:8px;">Add sizes first, then manage stock.</div>';
-        return;
-    }
-
-    // No colour variants — one row per size with "default" colour key
-    const colorKeys = colors.length > 0 ? colors.map(c => c.name) : ["default"];
-
-    grid.innerHTML = colorKeys.map(colorName => {
-        const colorLabel = colorName === "default" ? "" : `<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#9badb8;margin-bottom:4px;">${colorName}</div>`;
-        const sizeInputs = sizes.map(size => {
-            const key = `${colorName}|${size}`;
-            const qty = stock[key] !== undefined ? stock[key] : "";
-            return `<div style="display:flex;flex-direction:column;gap:3px;align-items:center;">
-                <span style="font-size:0.68rem;color:#5a6a7a;">${size}</span>
-                <input type="number" min="0"
-                       id="stock-${key.replace(/[^a-zA-Z0-9]/g,'_')}"
-                       data-key="${key}"
-                       value="${qty}"
-                       placeholder="∞"
-                       style="width:52px;padding:5px;border:1.5px solid #d0e6f5;border-radius:6px;font-size:0.82rem;text-align:center;outline:none;"
-                       onfocus="this.style.borderColor='#2B9FD8'"
-                       onblur="this.style.borderColor='#d0e6f5'">
-            </div>`;
-        }).join("");
-        return `<div style="background:#f4f8fb;border-radius:8px;padding:10px;border:1px solid #d0e6f5;">
-            ${colorLabel}
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">${sizeInputs}</div>
-        </div>`;
-    }).join("");
-}
-
-function collectStockData() {
-    const data = {};
-    document.querySelectorAll("#inventory-grid input[data-key]").forEach(inp => {
-        const key = inp.dataset.key;
-        const val = inp.value.trim();
-        if (val !== "") data[key] = parseInt(val) || 0;
-    });
-    return data;
-}
-
-async function setAllStock() {
-    const qty = parseInt(document.getElementById("bulk-stock-val").value);
-    if (isNaN(qty) || qty < 0) { showToast("Enter a valid quantity", false); return; }
-    document.querySelectorAll("#inventory-grid input[data-key]").forEach(inp => {
-        inp.value = qty;
-    });
-    showToast(`All set to ${qty}`);
-}
-
-// Override openEditModal to also build inventory grid
-const _origOpenEditModal = openEditModal;
-function openEditModal(product) {
-    _origOpenEditModal(product);
-    // Build inventory grid after modal opens
-    setTimeout(() => buildInventoryGrid(product), 50);
-}
-
-// Override saveProduct to include stock data
-const _origSaveProduct = saveProduct;
-async function saveProduct() {
-    // Collect stock before saving
-    const stockData = collectStockData();
-
-    const name  = document.getElementById("f-name").value.trim();
-    const brand = document.getElementById("f-brand").value.trim();
-    const price = parseInt(document.getElementById("f-price").value);
-
-    if (!name || !brand || !price) {
-        showToast("Name, brand and price are required", false); return;
-    }
-
-    const payload = {
-        name, brand, price,
-        tag:    document.getElementById("f-tag").value,
-        image:  document.getElementById("f-image").value,
-        sizes:  getSelectedSizes(),
-        colors: getColorRows(),
-        stock:  stockData,
-    };
-
-    const url    = editingId ? `/api/admin/products/${editingId}` : "/api/admin/products";
-    const method = editingId ? "PUT" : "POST";
-
-    try {
-        const res  = await fetch(url, {
-            method, credentials: "include",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(payload)
-        });
-        if (res.redirected) { showToast("Session expired", false); setTimeout(() => window.location.href="/admin", 1500); return; }
-        const data = await res.json();
-        if (data.success || data.product) {
-            showToast(editingId ? "✅ Product updated!" : "✅ Product added!");
-            closeModal();
-            setTimeout(() => location.reload(), 800);
-        } else {
-            showToast(data.error || "Failed to save", false);
-        }
-    } catch(e) { showToast("Network error", false); }
-}
 
 </script>
 
