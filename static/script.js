@@ -559,20 +559,29 @@ function buildStars(score, size = "sm") {
    Returns null if no deal, or { dealPrice, origPrice, pct, label }
 ================================================= */
 function getDeal(shoe) {
-    // ~40% of products get a deal, seeded by id
+    // ~40% of products get a deal, seeded by id so same product = same deal always
     const seed1 = (shoe.id * 3571 + 12345) % 10;
     if (seed1 >= 4) return null;  // 60% no deal
 
     const orig = shoe.price;
 
-    // Generate deal price: always > orig, but capped at orig + 5000
-    // Shown as "MRP" (original higher price) with current as discounted
+    // MRP is always higher than actual price, but hard capped at 5500
+    // If product already costs >= 5500, skip deal (nothing to show above it meaningfully)
+    if (orig >= 5500) return null;
+
+    const maxMrp = 5500;
+    const minMrp = orig + 200;  // at least ₹200 above actual price
+
+    if (minMrp > maxMrp) return null; // price too close to cap
+
     const seed2  = (shoe.id * 7919 + 54321) % 233280;
-    const markup = 800 + Math.floor((seed2 / 233280) * 4200); // 800–5000 above price
-    const mrp    = orig + markup;
+    const range  = maxMrp - minMrp;
+    // Round MRP to nearest 100 for clean look
+    const mrp    = Math.round((minMrp + Math.floor((seed2 / 233280) * range)) / 100) * 100;
 
     // Calculate % off
-    const pct = Math.round((markup / mrp) * 100);
+    const saved  = mrp - orig;
+    const pct    = Math.round((saved / mrp) * 100);
 
     // Label variety
     const labels = ["Limited Deal", "Flash Sale", "Today Only", "Hot Deal", "Special Price"];
@@ -593,10 +602,14 @@ function formatDeal(deal) {
 
 function buildProductCard(shoe) {
     const { score, count } = getRating(shoe.id);
+    const oos = shoe.out_of_stock === true;
     return `
-    <div class="card fade-in">
-        <img src="${shoe.image}" alt="${shoe.name}"
-             onerror="this.src='https://placehold.co/280x180/eaf3fa/2B9FD8?text=No+Image'">
+    <div class="card fade-in" style="${oos ? 'opacity:0.75;' : ''}">
+        <div style="position:relative;">
+            <img src="${shoe.image}" alt="${shoe.name}"
+                 onerror="this.src='https://placehold.co/280x180/eaf3fa/2B9FD8?text=No+Image'">
+            ${oos ? '<div style="position:absolute;top:8px;left:8px;background:#e53e3e;color:#fff;font-size:0.65rem;font-weight:800;padding:3px 8px;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase;">Out of Stock</div>' : ''}
+        </div>
         <div class="card-info">
             <p class="brand-label">${shoe.brand}</p>
             <h3>${shoe.name}</h3>
@@ -605,8 +618,10 @@ function buildProductCard(shoe) {
                 <span class="card-rating-score">${score} (${count})</span>
             </div>
             <span class="price">${formatPrice(shoe.price)}</span>
-            ${formatDeal(getDeal(shoe))}
-            <button onclick="openProduct(${shoe.id})">View Product</button>
+            ${!oos ? formatDeal(getDeal(shoe)) : ""}
+            <button onclick="openProduct(${shoe.id})" ${oos ? 'style="background:#aaa;border-color:#aaa;cursor:not-allowed;"' : ''}>
+                ${oos ? "Out of Stock" : "View Product"}
+            </button>
         </div>
     </div>`;
 }
@@ -836,16 +851,37 @@ async function loadProductPage() {
 
         const sizeSelect = document.getElementById("size-select");
         if (sizeSelect && shoe.sizes) {
-            // Build UK + Euro size options
             const ukToEuro = {
                 "UK 4":"EU 37","UK 5":"EU 38","UK 6":"EU 39","UK 7":"EU 41",
                 "UK 8":"EU 42","UK 9":"EU 43","UK 10":"EU 44","UK 11":"EU 45","UK 12":"EU 47"
             };
+            const stock = shoe.stock || {};
             sizeSelect.innerHTML = `<option value="">Select Size</option>`;
             shoe.sizes.forEach(s => {
                 const euro = ukToEuro[s] ? ` / ${ukToEuro[s]}` : "";
-                sizeSelect.innerHTML += `<option value="${s}">${s}${euro}</option>`;
+                // Check stock — try active colour first, then default
+                const activeColor = document.querySelector(".color-swatch.active")?.title || "default";
+                const key1 = `${activeColor}|${s}`;
+                const key2 = `default|${s}`;
+                const qty  = stock[key1] !== undefined ? stock[key1]
+                           : stock[key2] !== undefined ? stock[key2]
+                           : null; // null = unlimited
+                const oos  = qty !== null && qty <= 0;
+                const qtyLabel = qty !== null && qty > 0 && qty <= 5 ? ` (${qty} left)` : "";
+                sizeSelect.innerHTML += `<option value="${s}" ${oos ? "disabled" : ""}>
+                    ${s}${euro}${oos ? " — Sold Out" : qtyLabel}
+                </option>`;
             });
+        }
+
+        // Out of stock banner on product page
+        if (shoe.out_of_stock) {
+            const btnGroup = document.querySelector(".product-btn-group");
+            if (btnGroup) {
+                btnGroup.innerHTML = `<div style="background:#fff5f5;border:1.5px solid #fed7d7;border-radius:10px;padding:16px;text-align:center;color:#e53e3e;font-weight:700;font-size:1rem;">
+                    😔 This product is currently out of stock
+                </div>`;
+            }
         }
 
         // Render similar products
