@@ -158,22 +158,12 @@ def build_theme_vars(primary):
     }
 
 DEFAULT_SITE_SETTINGS = {
-    "primary_color":    "#2B9FD8",
-    "hero_font":        "default",
-    "model_path":       "sneaker.glb",
-    "model_scale":      3.0,
-    "model_y":          0.8,
-    "model_speed":      0.006,
-    # Hero text fields
-    "hero_eyebrow":     "New Collection 2026",
-    "hero_headline":    "Step Into",
-    "hero_highlight":   "Premium",
-    "hero_headline2":   "Comfort",
-    "hero_sub":         "Handpicked sneakers from the world's top brands — Nike, Adidas, New Balance and more. Delivered across India.",
-    "hero_cta":         "Shop Now",
-    "hero_eyebrow_color": "#2B9FD8",
-    "hero_text_color":  "#ffffff",
-    "hero_sub_color":   "rgba(255,255,255,0.72)",
+    "primary_color": "#2B9FD8",
+    "hero_font":     "default",
+    "model_path":    "sneaker.glb",
+    "model_scale":   3.0,
+    "model_y":       0.8,
+    "model_speed":   0.006,
 }
 
 def _build_theme(hex_color):
@@ -301,10 +291,8 @@ def admin_dashboard():
         q  = Order.query.order_by(Order.created_at.desc())
         if sf != "all": q = q.filter_by(status=sf)
         orders     = q.all()
-        all_orders   = Order.query.all()
-        # Revenue: exclude Cancelled orders — they should not count
-        active_orders = [o for o in all_orders if o.status != "Cancelled"]
-        total_rev     = sum(o.total for o in active_orders)
+        all_orders = Order.query.all()
+        total_rev  = sum(o.total for o in all_orders)
         return render_template("admin.html",
             orders=orders, status_filter=sf,
             total_orders=len(all_orders), total_rev=format_inr(total_rev),
@@ -312,8 +300,6 @@ def admin_dashboard():
             confirmed=Order.query.filter_by(status="Confirmed").count(),
             shipped=Order.query.filter_by(status="Shipped").count(),
             delivered=Order.query.filter_by(status="Delivered").count(),
-            cancelled=Order.query.filter_by(status="Cancelled").count(),
-            active_count=len(active_orders),
             offer=get_offer())
     return render_template("admin.html",
         orders=[], status_filter="all", total_orders=0, total_rev="₹0",
@@ -407,9 +393,7 @@ def api_add_product():
         return jsonify({"error": "name, brand and price are required"}), 400
     p = Product(name=name, brand=brand, price=price,
                 image=data.get("image",""), tag=data.get("tag",""),
-                sizes=json.dumps(data.get("sizes",[])),
-                colors=json.dumps(data.get("colors",[])),
-                stock=json.dumps(data.get("stock",{})))
+                sizes=json.dumps(data.get("sizes",[])), colors=json.dumps(data.get("colors",[])))
     db.session.add(p)
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()}), 201
@@ -428,8 +412,6 @@ def api_update_product(product_id):
     p.tag    = data.get("tag",    p.tag or "")
     p.sizes  = json.dumps(data.get("sizes",  json.loads(p.sizes  or "[]")))
     p.colors = json.dumps(data.get("colors", json.loads(p.colors or "[]")))
-    if "stock" in data:
-        p.set_stock(data["stock"])
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()})
 
@@ -487,11 +469,7 @@ def api_get_site_settings():
 def api_save_site_settings():
     if not USE_DB: return jsonify({"error": "No database"}), 503
     data = request.get_json(force=True)
-    allowed_keys = {
-        "primary_color","hero_font","model_path","model_scale","model_y","model_speed",
-        "hero_eyebrow","hero_headline","hero_highlight","hero_headline2","hero_sub","hero_cta",
-        "hero_eyebrow_color","hero_text_color","hero_sub_color"
-    }
+    allowed_keys = {"primary_color","hero_font","model_path","model_scale","model_y","model_speed"}
     clean = {k: v for k, v in data.items() if k in allowed_keys}
     save_site_settings(clean)
     return jsonify({"success": True, "settings": clean})
@@ -548,44 +526,15 @@ def create_order():
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
-def _adjust_stock(order, delta):
-    """delta=-1 to decrement (Delivered), delta=+1 to restore (Cancelled)."""
-    try:
-        for item in order.items:
-            product = Product.query.get(item.product_id)
-            if not product: continue
-            stock = product.get_stock()
-            color_key = item.color or "default"
-            size_key  = item.size  or "default"
-            key = f"{color_key}|{size_key}"
-            if key in stock:
-                stock[key] = max(0, stock[key] + (delta * item.qty))
-                product.set_stock(stock)
-        db.session.commit()
-    except Exception as e:
-        print(f"[claxxic] Stock adjust error: {e}")
-
 @app.route("/api/orders/<int:order_id>/status", methods=["PATCH"])
 @admin_required
 def update_order_status(order_id):
     if not USE_DB: return jsonify({"error": "No DB"}), 503
-    order      = Order.query.get_or_404(order_id)
+    order = Order.query.get_or_404(order_id)
     new_status = request.get_json(force=True).get("status")
-    valid      = ["Pending","Confirmed","Shipped","Delivered","Cancelled"]
-    if new_status not in valid:
+    if new_status not in ["Pending","Confirmed","Shipped","Delivered","Cancelled"]:
         return jsonify({"error": "Invalid status"}), 400
-
-    old_status = order.status
-
-    # Stock management
-    if new_status == "Delivered" and old_status != "Delivered":
-        _adjust_stock(order, -1)   # decrement stock on delivery
-    elif old_status == "Delivered" and new_status == "Cancelled":
-        _adjust_stock(order, +1)   # restore stock if delivered→cancelled
-    elif new_status == "Cancelled" and old_status not in ("Delivered","Cancelled"):
-        pass  # no stock change needed (stock only deducted at Delivered)
-
-    order.status     = new_status
+    order.status = new_status
     order.updated_at = datetime.utcnow()
     db.session.commit()
     return jsonify({"success": True, "status": new_status})
@@ -602,24 +551,6 @@ def update_order_notes(order_id):
 
 
 # ── ERRORS ────────────────────────────────────────────────────────────────────
-
-
-@app.route("/api/admin/products/<int:product_id>/stock", methods=["GET"])
-@admin_required
-def api_get_stock(product_id):
-    if not USE_DB: return jsonify({}), 503
-    p = Product.query.get_or_404(product_id)
-    return jsonify(p.get_stock())
-
-@app.route("/api/admin/products/<int:product_id>/stock", methods=["POST"])
-@admin_required
-def api_set_stock(product_id):
-    if not USE_DB: return jsonify({"error": "No DB"}), 503
-    p    = Product.query.get_or_404(product_id)
-    data = request.get_json(force=True)
-    p.set_stock(data)
-    db.session.commit()
-    return jsonify({"success": True, "stock": p.get_stock()})
 
 @app.errorhandler(404)
 def not_found(e): return jsonify({"error": str(e)}), 404
