@@ -301,19 +301,24 @@ def admin_dashboard():
         q  = Order.query.order_by(Order.created_at.desc())
         if sf != "all": q = q.filter_by(status=sf)
         orders     = q.all()
-        all_orders   = Order.query.all()
-        # Revenue: exclude Cancelled orders — they should not count
-        active_orders = [o for o in all_orders if o.status != "Cancelled"]
-        total_rev     = sum(o.total for o in active_orders)
+        all_orders = Order.query.all()
+        # Revenue: only Confirmed + Shipped + Delivered (NOT Pending or Cancelled)
+        REVENUE_STATUSES = {"Confirmed", "Shipped", "Delivered"}
+        total_rev     = sum(o.total for o in all_orders if o.status in REVENUE_STATUSES)
+        pending_rev   = sum(o.total for o in all_orders if o.status == "Pending")
+        cancelled_rev = sum(o.total for o in all_orders if o.status == "Cancelled")
+        cancelled_cnt = sum(1 for o in all_orders if o.status == "Cancelled")
         return render_template("admin.html",
             orders=orders, status_filter=sf,
-            total_orders=len(all_orders), total_rev=format_inr(total_rev),
+            total_orders=len(all_orders),
+            total_rev=format_inr(total_rev),
+            pending_rev=format_inr(pending_rev),
+            cancelled_rev=format_inr(cancelled_rev),
             pending=Order.query.filter_by(status="Pending").count(),
             confirmed=Order.query.filter_by(status="Confirmed").count(),
             shipped=Order.query.filter_by(status="Shipped").count(),
             delivered=Order.query.filter_by(status="Delivered").count(),
-            cancelled=Order.query.filter_by(status="Cancelled").count(),
-            active_count=len(active_orders),
+            cancelled=cancelled_cnt,
             offer=get_offer())
     return render_template("admin.html",
         orders=[], status_filter="all", total_orders=0, total_rev="₹0",
@@ -588,7 +593,25 @@ def update_order_status(order_id):
     order.status     = new_status
     order.updated_at = datetime.utcnow()
     db.session.commit()
-    return jsonify({"success": True, "status": new_status})
+
+    # Return recalculated live stats so frontend can update without reload
+    REVENUE_STATUSES = {"Confirmed", "Shipped", "Delivered"}
+    all_orders    = Order.query.all()
+    total_rev     = sum(o.total for o in all_orders if o.status in REVENUE_STATUSES)
+    pending_rev   = sum(o.total for o in all_orders if o.status == "Pending")
+    cancelled_rev = sum(o.total for o in all_orders if o.status == "Cancelled")
+    return jsonify({
+        "success":       True,
+        "status":        new_status,
+        "total_rev":     format_inr(total_rev),
+        "pending_rev":   format_inr(pending_rev),
+        "cancelled_rev": format_inr(cancelled_rev),
+        "pending":       Order.query.filter_by(status="Pending").count(),
+        "confirmed":     Order.query.filter_by(status="Confirmed").count(),
+        "shipped":       Order.query.filter_by(status="Shipped").count(),
+        "delivered":     Order.query.filter_by(status="Delivered").count(),
+        "cancelled":     Order.query.filter_by(status="Cancelled").count(),
+    })
 
 @app.route("/api/orders/<int:order_id>/notes", methods=["PATCH"])
 @admin_required
