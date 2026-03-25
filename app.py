@@ -164,16 +164,26 @@ DEFAULT_SITE_SETTINGS = {
     "model_scale":      3.0,
     "model_y":          0.8,
     "model_speed":      0.006,
-    # Hero text fields
-    "hero_eyebrow":     "New Collection 2026",
-    "hero_headline":    "Step Into",
-    "hero_highlight":   "Premium",
-    "hero_headline2":   "Comfort",
-    "hero_sub":         "Handpicked sneakers from the world's top brands — Nike, Adidas, New Balance and more. Delivered across India.",
-    "hero_cta":         "Shop Now",
+    # Hero text
+    "hero_eyebrow":       "New Collection 2026",
+    "hero_headline":      "Step Into",
+    "hero_highlight":     "Premium",
+    "hero_headline2":     "Comfort",
+    "hero_sub":           "",
+    "hero_cta":           "Shop Now",
+    "hero_cta_color":     "#2B9FD8",
     "hero_eyebrow_color": "#2B9FD8",
-    "hero_text_color":  "#ffffff",
-    "hero_sub_color":   "rgba(255,255,255,0.72)",
+    "hero_text_color":    "#ffffff",
+    "hero_sub_color":     "rgba(255,255,255,0.72)",
+    # Stat pills (3 pills)
+    "stat1_num":   "56+",  "stat1_label": "Styles",
+    "stat2_num":   "17",   "stat2_label": "Brands",
+    "stat3_num":   "Free", "stat3_label": "Shipping",
+    # Feature tags (4 right-side tags)
+    "tag1_icon":  "☁️", "tag1_title": "Ultra Comfort",  "tag1_sub": "Cloud-foam cushioning",
+    "tag2_icon":  "⚡", "tag2_title": "Lightweight",     "tag2_sub": "Barely-there feel",
+    "tag3_icon":  "🎨", "tag3_title": "Smart Design",    "tag3_sub": "Modern sportswear style",
+    "tag4_icon":  "🔒", "tag4_title": "Maximum Grip",    "tag4_sub": "Advanced traction sole",
 }
 
 def _build_theme(hex_color):
@@ -321,6 +331,14 @@ def admin_dashboard():
 
 
 # ── ADMIN PRODUCTS ────────────────────────────────────────────────────────────
+
+
+@app.route("/admin/site-settings")
+@admin_required
+def admin_site_settings_page():
+    return render_template("admin_site_settings.html",
+        site_settings=get_site_settings(),
+        offer=get_offer())
 
 @app.route("/admin/products")
 @admin_required
@@ -490,7 +508,10 @@ def api_save_site_settings():
     allowed_keys = {
         "primary_color","hero_font","model_path","model_scale","model_y","model_speed",
         "hero_eyebrow","hero_headline","hero_highlight","hero_headline2","hero_sub","hero_cta",
-        "hero_eyebrow_color","hero_text_color","hero_sub_color"
+        "hero_cta_color","hero_eyebrow_color","hero_text_color","hero_sub_color",
+        "stat1_num","stat1_label","stat2_num","stat2_label","stat3_num","stat3_label",
+        "tag1_icon","tag1_title","tag1_sub","tag2_icon","tag2_title","tag2_sub",
+        "tag3_icon","tag3_title","tag3_sub","tag4_icon","tag4_title","tag4_sub",
     }
     clean = {k: v for k, v in data.items() if k in allowed_keys}
     save_site_settings(clean)
