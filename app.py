@@ -218,20 +218,33 @@ def get_site_settings():
         return defaults
     try:
         row = Setting.query.get("site_settings")
-        if row:
+        if row and row.value:
             saved = json.loads(row.value)
-            defaults.update(saved)
-    except: pass
+            # Merge: saved values override defaults, but defaults fill any missing keys
+            for k, v in saved.items():
+                if v is not None and v != "":
+                    defaults[k] = v
+    except Exception as e:
+        print(f"[claxxic] get_site_settings parse error: {e}")
     defaults["offer"] = get_offer()
     defaults["theme"] = _build_theme(defaults.get("primary_color","#2B9FD8"))
     return defaults
 
 def save_site_settings(data):
     row = Setting.query.get("site_settings")
-    # Only store site_settings keys, not offer
-    to_save = {k: v for k, v in data.items() if k != "offer"}
-    if row: row.value = json.dumps(to_save)
-    else: db.session.add(Setting(key="site_settings", value=json.dumps(to_save)))
+    # Load existing saved values first
+    existing = {}
+    if row and row.value:
+        try:
+            existing = json.loads(row.value)
+        except Exception:
+            existing = {}
+    # Merge: new data overrides existing, skip "offer" key
+    merged = {**existing, **{k: v for k, v in data.items() if k != "offer"}}
+    if row:
+        row.value = json.dumps(merged)
+    else:
+        db.session.add(Setting(key="site_settings", value=json.dumps(merged)))
     db.session.commit()
 
 @app.context_processor
