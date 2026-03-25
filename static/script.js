@@ -405,7 +405,8 @@ function initThreeScene(cfg) {
     const container = document.getElementById("sneaker-container");
     if (!container) return;
 
-    const MODEL_PATH  = "/static/" + (cfg.model_path  || "sneaker.glb");
+    const rawPath = cfg.model_path || "sneaker.glb";
+    const MODEL_PATH  = rawPath.startsWith("http") ? rawPath : "/static/" + rawPath;
     const MODEL_SCALE = parseFloat(cfg.model_scale)   || 3;
     const MODEL_Y     = parseFloat(cfg.model_y)       || 0.8;
     const MODEL_SPEED = parseFloat(cfg.model_speed)   || 0.006;
