@@ -348,6 +348,44 @@
     </div>
 
 
+
+    <!-- ── SIZE DISPLAY ── -->
+    <div class="panel">
+        <div class="panel-title">📐 Size Display Preference</div>
+        <p style="font-size:0.88rem;color:#5a6a7a;margin-bottom:16px;">
+            Controls how sizes appear on the product page for customers.
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;
+                background:#f4f8fb;border:1.5px solid #d0e6f5;border-radius:10px;
+                padding:10px 18px;font-size:0.9rem;font-weight:600;transition:all 0.15s;"
+                id="lbl-both">
+                <input type="radio" name="size-unit" value="both" id="su-both"
+                       style="accent-color:#2B9FD8;" checked>
+                UK / EU &nbsp;<span style="font-size:0.75rem;color:#9badb8;font-weight:400;">e.g. UK 8 / EU 42</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;
+                background:#f4f8fb;border:1.5px solid #d0e6f5;border-radius:10px;
+                padding:10px 18px;font-size:0.9rem;font-weight:600;transition:all 0.15s;"
+                id="lbl-uk">
+                <input type="radio" name="size-unit" value="uk" id="su-uk"
+                       style="accent-color:#2B9FD8;">
+                UK Only &nbsp;<span style="font-size:0.75rem;color:#9badb8;font-weight:400;">e.g. UK 8</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;
+                background:#f4f8fb;border:1.5px solid #d0e6f5;border-radius:10px;
+                padding:10px 18px;font-size:0.9rem;font-weight:600;transition:all 0.15s;"
+                id="lbl-euro">
+                <input type="radio" name="size-unit" value="euro" id="su-euro"
+                       style="accent-color:#2B9FD8;">
+                EU Only &nbsp;<span style="font-size:0.75rem;color:#9badb8;font-weight:400;">e.g. EU 42</span>
+            </label>
+        </div>
+        <div class="save-bar">
+            <button class="btn-save" onclick="saveSection('size')">Save Size Preference</button>
+        </div>
+    </div>
+
     <!-- ── BRAND VISIBILITY ── -->
     <div class="panel">
         <div class="panel-title">🏷️ Shop by Brand — Visibility</div>
@@ -427,6 +465,23 @@ function setVal(id, val) {
 }
 
 /* ── Load all settings from API ── */
+function highlightSizeUnit(val) {
+    ["both","uk","euro"].forEach(v => {
+        const lbl = document.getElementById("lbl-" + v);
+        if (!lbl) return;
+        if (v === val) {
+            lbl.style.background   = "#eaf3fa";
+            lbl.style.borderColor  = "#2B9FD8";
+        } else {
+            lbl.style.background   = "#f4f8fb";
+            lbl.style.borderColor  = "#d0e6f5";
+        }
+    });
+}
+document.querySelectorAll("input[name='size-unit']").forEach(r => {
+    r.addEventListener("change", () => highlightSizeUnit(r.value));
+});
+
 async function loadSettings() {
     try {
         const res  = await fetch('/api/admin/site-settings', { credentials: 'include' });
@@ -474,6 +529,13 @@ async function loadSettings() {
         if (s.model_speed !== undefined) {
             document.getElementById('ss-speed').value = s.model_speed;
             document.getElementById('ss-speed-val').textContent = parseFloat(s.model_speed).toFixed(3);
+        }
+
+        // Size unit
+        if (s.size_unit) {
+            const radio = document.querySelector(`input[name="size-unit"][value="${s.size_unit}"]`);
+            if (radio) radio.checked = true;
+            highlightSizeUnit(s.size_unit);
         }
 
         // Offer ribbon
@@ -652,6 +714,23 @@ function collectHiddenBrands() {
 // Extend saveSection to handle brands
 const _origSaveSection = saveSection;
 async function saveSection(section) {
+    if (section === "size") {
+        const val = document.querySelector("input[name='size-unit']:checked")?.value || "both";
+        const payload = { size_unit: val };
+        try {
+            const res  = await fetch("/api/admin/site-settings", {
+                method:"POST", credentials:"include",
+                headers:{"Content-Type":"application/json"},
+                body: JSON.stringify(payload)
+            });
+            if (res.redirected) { showToast("Session expired", false); return; }
+            const data = await res.json();
+            if (data.success) showToast("✅ Size preference saved!");
+            else showToast(data.error || "Failed", false);
+        } catch(e) { showToast("Network error", false); }
+        return;
+    }
+
     if (section === "brands") {
         const payload = {
             show_brands_section: document.getElementById("ss-show-brands").checked,
@@ -675,6 +754,23 @@ async function saveSection(section) {
 
 // Extend loadSettings to populate brand toggles
 const _origLoadSettings = loadSettings;
+function highlightSizeUnit(val) {
+    ["both","uk","euro"].forEach(v => {
+        const lbl = document.getElementById("lbl-" + v);
+        if (!lbl) return;
+        if (v === val) {
+            lbl.style.background   = "#eaf3fa";
+            lbl.style.borderColor  = "#2B9FD8";
+        } else {
+            lbl.style.background   = "#f4f8fb";
+            lbl.style.borderColor  = "#d0e6f5";
+        }
+    });
+}
+document.querySelectorAll("input[name='size-unit']").forEach(r => {
+    r.addEventListener("change", () => highlightSizeUnit(r.value));
+});
+
 async function loadSettings() {
     await _origLoadSettings();
     // Load brand settings from same API response (already fetched)
