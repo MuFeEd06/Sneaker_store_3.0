@@ -428,10 +428,13 @@
         </div>
     </section>
 
-    <section class="collections-section fade-in" id="collections">
+    {% if site_settings.show_brands_section != False %}
+    <section class="collections-section fade-in" id="collections"
+             data-hidden-brands="{{ site_settings.hidden_brands or '' }}">
         <h2 class="section-title">Shop by Brand</h2>
         <div class="brand-tiles-grid" id="brand-tiles-grid"></div>
     </section>
+    {% endif %}
 
     <section id="shop" class="shop-section fade-in">
         <h2 class="section-title">Trending Shoes</h2>
