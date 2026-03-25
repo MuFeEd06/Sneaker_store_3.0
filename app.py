@@ -184,6 +184,8 @@ DEFAULT_SITE_SETTINGS = {
     "tag2_icon":  "⚡", "tag2_title": "Lightweight",     "tag2_sub": "Barely-there feel",
     "tag3_icon":  "🎨", "tag3_title": "Smart Design",    "tag3_sub": "Modern sportswear style",
     "tag4_icon":  "🔒", "tag4_title": "Maximum Grip",    "tag4_sub": "Advanced traction sole",
+    # Brand visibility — JSON array of disabled brand names
+    "disabled_brands": "[]",
 }
 
 def _build_theme(hex_color):
@@ -218,33 +220,20 @@ def get_site_settings():
         return defaults
     try:
         row = Setting.query.get("site_settings")
-        if row and row.value:
+        if row:
             saved = json.loads(row.value)
-            # Merge: saved values override defaults, but defaults fill any missing keys
-            for k, v in saved.items():
-                if v is not None and v != "":
-                    defaults[k] = v
-    except Exception as e:
-        print(f"[claxxic] get_site_settings parse error: {e}")
+            defaults.update(saved)
+    except: pass
     defaults["offer"] = get_offer()
     defaults["theme"] = _build_theme(defaults.get("primary_color","#2B9FD8"))
     return defaults
 
 def save_site_settings(data):
     row = Setting.query.get("site_settings")
-    # Load existing saved values first
-    existing = {}
-    if row and row.value:
-        try:
-            existing = json.loads(row.value)
-        except Exception:
-            existing = {}
-    # Merge: new data overrides existing, skip "offer" key
-    merged = {**existing, **{k: v for k, v in data.items() if k != "offer"}}
-    if row:
-        row.value = json.dumps(merged)
-    else:
-        db.session.add(Setting(key="site_settings", value=json.dumps(merged)))
+    # Only store site_settings keys, not offer
+    to_save = {k: v for k, v in data.items() if k != "offer"}
+    if row: row.value = json.dumps(to_save)
+    else: db.session.add(Setting(key="site_settings", value=json.dumps(to_save)))
     db.session.commit()
 
 @app.context_processor
@@ -415,12 +404,13 @@ def api_public_site_settings():
     s = get_site_settings()
     # Only expose safe fields to public
     return jsonify({
-        "primary_color": s.get("primary_color","#2B9FD8"),
-        "hero_font":     s.get("hero_font","default"),
-        "model_path":    s.get("model_path","sneaker.glb"),
-        "model_scale":   s.get("model_scale",3.0),
-        "model_y":       s.get("model_y",0.8),
-        "model_speed":   s.get("model_speed",0.006),
+        "primary_color":    s.get("primary_color","#2B9FD8"),
+        "hero_font":        s.get("hero_font","default"),
+        "model_path":       s.get("model_path","sneaker.glb"),
+        "model_scale":      s.get("model_scale",3.0),
+        "model_y":          s.get("model_y",0.8),
+        "model_speed":      s.get("model_speed",0.006),
+        "disabled_brands":  s.get("disabled_brands","[]"),
     })
 
 
