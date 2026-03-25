@@ -482,12 +482,24 @@ function getBrandConfig(name) {
 /* =================================================
    BRAND TILES (HOMEPAGE)
 ================================================= */
-function renderBrandTiles() {
+async function renderBrandTiles() {
     const grid = document.getElementById("brand-tiles-grid");
     if (!grid) return;
     grid.innerHTML = "";
 
-    BRANDS.forEach((brand, i) => {
+    // Fetch disabled brands from site settings
+    let disabledBrands = new Set();
+    try {
+        const res  = await fetch("/api/site-settings");
+        const data = await res.json();
+        const raw  = data.disabled_brands || "[]";
+        disabledBrands = new Set(JSON.parse(raw));
+    } catch {}
+
+    // Filter out disabled brands
+    const visibleBrands = BRANDS.filter(b => !disabledBrands.has(b.name));
+
+    visibleBrands.forEach((brand, i) => {
         const tile = document.createElement("a");
         tile.className = "brand-tile fade-in";
         tile.href = `/brand?brand=${encodeURIComponent(brand.slug)}`;
