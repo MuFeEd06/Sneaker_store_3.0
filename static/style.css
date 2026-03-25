@@ -544,19 +544,7 @@ header.navbar .logo img { height: 50px; }
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-#size-select {
-    width: 100%;
-    padding: 12px;
-    background: var(--surface-2);
-    color: var(--text);
-    border: 1.5px solid var(--border);
-    border-radius: 6px;
-    margin: 8px 0 20px;
-    font-size: 1rem;
-    outline: none;
-    transition: border-color 0.2s;
-}
-#size-select:focus { border-color: var(--primary); }
+#size-select { display: none; }
 
 .product-btn-group {
     display: flex;
@@ -989,4 +977,97 @@ footer {
 .product-page .deal-tag {
     font-size: 0.78rem;
     padding: 3px 10px;
+}
+
+/* =================================================
+   PRODUCT PAGE — SIZE CHIPS (replaces select)
+   ================================================= */
+.size-section { margin: 16px 0 20px; }
+
+.size-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.size-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.size-unit-label {
+    font-size: 0.75rem;
+    color: var(--primary);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.size-chips-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.size-chip-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 58px;
+    padding: 8px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.18s;
+    user-select: none;
+    position: relative;
+    gap: 1px;
+}
+
+.size-chip-btn:hover:not(.oos):not(.selected) {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.size-chip-btn.selected {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    transform: scale(1.05);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+
+.size-chip-btn.oos {
+    opacity: 0.38;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.size-chip-uk {
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.size-chip-eu {
+    font-size: 0.65rem;
+    opacity: 0.72;
+    line-height: 1;
+    letter-spacing: 0.2px;
+}
+
+.size-chip-btn.selected .size-chip-eu { opacity: 0.85; }
+
+.size-chip-btn .stock-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #f5a623;
 }

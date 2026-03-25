@@ -63,7 +63,7 @@ function getCurrentPrice() {
 
 function addToCartWithSize() {
     const size = document.getElementById("size-select").value;
-    if (!size) { showToast("Please select a size first"); return; }
+    if (!size) { showToast("Please select a size first 👆"); return; }
 
     const id    = parseInt(localStorage.getItem("productId"));
     const name  = document.getElementById("product-name")?.innerText || "";
@@ -88,7 +88,7 @@ function addToCartWithSize() {
 /* Buy Now — add to cart then go straight to cart page */
 function buyNow() {
     const size = document.getElementById("size-select").value;
-    if (!size) { showToast("Please select a size first"); return; }
+    if (!size) { showToast("Please select a size first 👆"); return; }
 
     const id    = parseInt(localStorage.getItem("productId"));
     const name  = document.getElementById("product-name")?.innerText || "";
@@ -828,6 +828,7 @@ async function loadProductPage() {
         const shoe = products.find(p => p.id === id);
         if (!shoe) { nameEl.innerText = "Product not found"; return; }
 
+        window._currentShoe = shoe;  // store for size chip re-render on colour change
         nameEl.innerText  = shoe.name;
         priceEl.innerText = formatPrice(shoe.price);
         imgEl.src         = shoe.image;
@@ -863,30 +864,8 @@ async function loadProductPage() {
         // Render color swatches
         renderColorSwatches(shoe);
 
-        const sizeSelect = document.getElementById("size-select");
-        if (sizeSelect && shoe.sizes) {
-            const ukToEuro = {
-                "UK 4":"EU 37","UK 5":"EU 38","UK 6":"EU 39","UK 7":"EU 41",
-                "UK 8":"EU 42","UK 9":"EU 43","UK 10":"EU 44","UK 11":"EU 45","UK 12":"EU 47"
-            };
-            const stock = shoe.stock || {};
-            sizeSelect.innerHTML = `<option value="">Select Size</option>`;
-            shoe.sizes.forEach(s => {
-                const euro = ukToEuro[s] ? ` / ${ukToEuro[s]}` : "";
-                // Check stock — try active colour first, then default
-                const activeColor = document.querySelector(".color-swatch.active")?.title || "default";
-                const key1 = `${activeColor}|${s}`;
-                const key2 = `default|${s}`;
-                const qty  = stock[key1] !== undefined ? stock[key1]
-                           : stock[key2] !== undefined ? stock[key2]
-                           : null; // null = unlimited
-                const oos  = qty !== null && qty <= 0;
-                const qtyLabel = qty !== null && qty > 0 && qty <= 5 ? ` (${qty} left)` : "";
-                sizeSelect.innerHTML += `<option value="${s}" ${oos ? "disabled" : ""}>
-                    ${s}${euro}${oos ? " — Sold Out" : qtyLabel}
-                </option>`;
-            });
-        }
+        // Render size chips
+        renderSizeChips(shoe);
 
         // Out of stock banner on product page
         if (shoe.out_of_stock) {
@@ -905,6 +884,84 @@ async function loadProductPage() {
         console.error("Failed to load product:", err);
         if (nameEl) nameEl.innerText = "Error loading product";
     }
+}
+
+
+/* =================================================
+   SIZE CHIPS — product page
+   ================================================= */
+const UK_TO_EURO = {
+    "UK 4":"EU 37","UK 5":"EU 38","UK 6":"EU 39","UK 7":"EU 41",
+    "UK 8":"EU 42","UK 9":"EU 43","UK 10":"EU 44","UK 11":"EU 45","UK 12":"EU 47"
+};
+
+// Size unit preference is loaded from /api/site-settings
+let _sizeUnit = "both"; // "uk" | "euro" | "both"
+
+async function loadSizeUnit() {
+    try {
+        const res  = await fetch("/api/site-settings");
+        const data = await res.json();
+        _sizeUnit = data.size_unit || "both";
+    } catch(e) { _sizeUnit = "both"; }
+}
+
+function getSizeLabel(ukSize) {
+    const euro = UK_TO_EURO[ukSize] || "";
+    if (_sizeUnit === "euro" && euro) return { primary: euro, secondary: "" };
+    if (_sizeUnit === "uk")           return { primary: ukSize, secondary: "" };
+    return { primary: ukSize, secondary: euro }; // "both"
+}
+
+function renderSizeChips(shoe) {
+    const wrap   = document.getElementById("size-chips-wrap");
+    const hidden = document.getElementById("size-select");
+    const unitLbl = document.getElementById("size-unit-label");
+    if (!wrap || !shoe.sizes) return;
+
+    // Update unit label
+    if (unitLbl) {
+        const labels = { uk: "UK Sizes", euro: "EU Sizes", both: "UK / EU" };
+        unitLbl.textContent = labels[_sizeUnit] || "UK / EU";
+    }
+
+    const stock = shoe.stock || {};
+    wrap.innerHTML = "";
+
+    shoe.sizes.forEach(s => {
+        const activeColor = document.querySelector(".color-swatch.active")?.title || "default";
+        const key1 = `${activeColor}|${s}`;
+        const key2 = `default|${s}`;
+        const qty  = stock[key1] !== undefined ? stock[key1]
+                   : stock[key2] !== undefined ? stock[key2]
+                   : null;
+        const oos  = qty !== null && qty <= 0;
+        const lowStock = qty !== null && qty > 0 && qty <= 5;
+
+        const { primary, secondary } = getSizeLabel(s);
+
+        const chip = document.createElement("div");
+        chip.className  = "size-chip-btn" + (oos ? " oos" : "");
+        chip.dataset.size = s;
+        chip.title = oos ? "Sold Out" : (lowStock ? `${qty} left` : s);
+
+        chip.innerHTML = `
+            <span class="size-chip-uk">${primary}</span>
+            ${secondary ? `<span class="size-chip-eu">${secondary}</span>` : ""}
+            ${lowStock ? '<span class="stock-dot"></span>' : ""}
+        `;
+
+        if (!oos) {
+            chip.addEventListener("click", () => {
+                // Deselect all, select this
+                wrap.querySelectorAll(".size-chip-btn").forEach(c => c.classList.remove("selected"));
+                chip.classList.add("selected");
+                hidden.value = s;  // store UK value always
+            });
+        }
+
+        wrap.appendChild(chip);
+    });
 }
 
 /* =================================================
@@ -1077,7 +1134,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (onHome)    { renderBrandTiles(); renderTrendingShoes(); }
     if (onBrand)   renderBrandPage();
-    if (onProduct) loadProductPage();
+    if (onProduct) { loadSizeUnit().then(loadProductPage); }
     if (onCart)    renderCartPage();
 });
 
