@@ -133,7 +133,7 @@
             align-items: center;
             gap: 10px;
             padding: 14px 28px;
-            background: #2B9FD8;
+            background: var(--primary);
             color: #fff;
             font-size: 0.88rem;
             font-weight: 700;
@@ -150,7 +150,7 @@
         }
 
         .hero-cta:hover {
-            background: #1a7ab0;
+            background: var(--primary-dark);
             transform: translateY(-2px);
         }
 
@@ -305,7 +305,7 @@
             transform: translateX(-50%);
             width: 2px;
             height: 6px;
-            background: #2B9FD8;
+            background: var(--primary);
             border-radius: 2px;
             animation: scrollBounce 1.6s ease infinite;
         }
@@ -393,16 +393,16 @@
 
                 <div class="hero-stats">
                     <div class="stat-pill">
-                        <span class="stat-pill-num">56+</span>
-                        <span class="stat-pill-label">Styles</span>
+                        <span class="stat-pill-num">{{ site_settings.stat1_num or '56+' }}</span>
+                        <span class="stat-pill-label">{{ site_settings.stat1_label or 'Styles' }}</span>
                     </div>
                     <div class="stat-pill">
-                        <span class="stat-pill-num">17</span>
-                        <span class="stat-pill-label">Brands</span>
+                        <span class="stat-pill-num">{{ site_settings.stat2_num or '17' }}</span>
+                        <span class="stat-pill-label">{{ site_settings.stat2_label or 'Brands' }}</span>
                     </div>
                     <div class="stat-pill">
-                        <span class="stat-pill-num">Free</span>
-                        <span class="stat-pill-label">Shipping</span>
+                        <span class="stat-pill-num">{{ site_settings.stat3_num or 'Free' }}</span>
+                        <span class="stat-pill-label">{{ site_settings.stat3_label or 'Shipping' }}</span>
                     </div>
                 </div>
             </div>
@@ -410,34 +410,15 @@
 
         <!-- Floating feature tags — desktop right side -->
         <div class="hero-tags">
+            {% for i in range(1,5) %}
             <div class="hero-tag">
-                <div class="tag-icon">☁️</div>
+                <div class="tag-icon">{{ site_settings['tag' ~ i ~ '_icon'] or ['☁️','⚡','🎨','🔒'][i-1] }}</div>
                 <div class="tag-text-wrap">
-                    <span class="tag-title">Ultra Comfort</span>
-                    <span class="tag-subtitle">Cloud-foam cushioning</span>
+                    <span class="tag-title">{{ site_settings['tag' ~ i ~ '_title'] or ['Ultra Comfort','Lightweight','Smart Design','Maximum Grip'][i-1] }}</span>
+                    <span class="tag-subtitle">{{ site_settings['tag' ~ i ~ '_sub'] or ['Cloud-foam cushioning','Barely-there feel','Modern sportswear style','Advanced traction sole'][i-1] }}</span>
                 </div>
             </div>
-            <div class="hero-tag">
-                <div class="tag-icon">⚡</div>
-                <div class="tag-text-wrap">
-                    <span class="tag-title">Lightweight</span>
-                    <span class="tag-subtitle">Barely-there feel</span>
-                </div>
-            </div>
-            <div class="hero-tag">
-                <div class="tag-icon">🎨</div>
-                <div class="tag-text-wrap">
-                    <span class="tag-title">Smart Design</span>
-                    <span class="tag-subtitle">Modern sportswear style</span>
-                </div>
-            </div>
-            <div class="hero-tag">
-                <div class="tag-icon">🔒</div>
-                <div class="tag-text-wrap">
-                    <span class="tag-title">Maximum Grip</span>
-                    <span class="tag-subtitle">Advanced traction sole</span>
-                </div>
-            </div>
+            {% endfor %}
         </div>
 
         <!-- Scroll hint -->

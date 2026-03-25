@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Settings — Claxxic India</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f8fb; color: #1a1a2e; }
+
+        .admin-header {
+            background: #fff; border-bottom: 1px solid #d0e6f5;
+            padding: 0 5%; height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 200;
+            box-shadow: 0 2px 12px rgba(43,159,216,0.08);
+        }
+        .admin-brand { font-size: 1.3rem; font-weight: 800; color: #2B9FD8; }
+        .header-nav { display: flex; gap: 8px; align-items: center; }
+        .nav-btn {
+            padding: 7px 16px; border-radius: 20px; font-size: 0.85rem;
+            font-weight: 600; cursor: pointer; text-decoration: none;
+            border: 1.5px solid #d0e6f5; background: none; color: #5a6a7a;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { border-color: #2B9FD8; color: #2B9FD8; }
+        .nav-btn.primary { background: #2B9FD8; color: #fff; border-color: #2B9FD8; }
+        .nav-btn.primary:hover { background: #1a7ab0; }
+        .nav-btn.danger { border-color: #fed7d7; color: #e53e3e; }
+        .nav-btn.danger:hover { background: #e53e3e; color: #fff; }
+        .nav-btn.active { background: #eaf3fa; color: #2B9FD8; border-color: #2B9FD8; }
+
+        .page { max-width: 900px; margin: 0 auto; padding: 28px 5% 80px; }
+
+        .panel {
+            background: #fff; border-radius: 16px; border: 1px solid #d0e6f5;
+            padding: 28px; margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(43,159,216,0.06);
+        }
+        .panel-title {
+            font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; color: #9badb8; margin-bottom: 20px;
+        }
+        .section-divider {
+            border: none; border-top: 1px solid #eaf3fa;
+            margin: 20px 0;
+        }
+        .section-label {
+            font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #9badb8; margin-bottom: 14px;
+        }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label { font-size: 0.75rem; font-weight: 700; color: #5a6a7a; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group select {
+            padding: 9px 13px; border: 1.5px solid #d0e6f5; border-radius: 8px;
+            font-size: 0.88rem; outline: none; background: #f4f8fb; color: #1a1a2e;
+            font-family: inherit; transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #2B9FD8; background: #fff;
+        }
+        .color-row { display: flex; align-items: center; gap: 10px; }
+        .color-row input[type="color"] {
+            width: 44px; height: 36px; border: 1.5px solid #d0e6f5;
+            border-radius: 8px; cursor: pointer; padding: 2px;
+        }
+        .color-hex { font-size: 0.78rem; color: #5a6a7a; font-family: monospace; }
+
+        .preset-dots { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+        .preset-dot {
+            width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+            border: 2px solid transparent; transition: border-color 0.15s, transform 0.15s;
+        }
+        .preset-dot:hover { transform: scale(1.2); border-color: #1a1a2e; }
+
+        .slider-row { display: flex; flex-direction: column; gap: 6px; }
+        .slider-label-row { display: flex; justify-content: space-between; }
+        .slider-label-row label { font-size: 0.75rem; font-weight: 700; color: #5a6a7a; text-transform: uppercase; }
+        .slider-label-row span { font-size: 0.78rem; color: #2B9FD8; font-weight: 700; }
+        input[type="range"] { width: 100%; accent-color: #2B9FD8; }
+
+        .tag-row {
+            display: grid; grid-template-columns: 60px 1fr 1fr;
+            gap: 8px; align-items: center;
+            background: #f4f8fb; border-radius: 8px; padding: 10px 12px;
+            border: 1px solid #d0e6f5; margin-bottom: 8px;
+        }
+        .tag-row input { padding: 7px 10px; border: 1.5px solid #d0e6f5; border-radius: 6px; font-size: 0.82rem; outline: none; background: #fff; }
+        .tag-row input:focus { border-color: #2B9FD8; }
+
+        .model-upload-label {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 9px 16px; background: #eaf3fa; color: #2B9FD8;
+            border: 1.5px solid #2B9FD8; border-radius: 8px;
+            font-size: 0.82rem; font-weight: 700; cursor: pointer;
+            position: relative; overflow: hidden; width: fit-content;
+        }
+        .model-upload-label input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+        .save-bar {
+            display: flex; justify-content: flex-end; gap: 10px;
+            padding-top: 16px; border-top: 1px solid #eaf3fa; margin-top: 20px;
+        }
+        .btn-save {
+            padding: 11px 32px; background: #2B9FD8; color: #fff; border: none;
+            border-radius: 10px; font-size: 0.95rem; font-weight: 700;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .btn-save:hover { background: #1a7ab0; }
+
+        #toast {
+            position: fixed; bottom: 28px; left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1a1a2e; color: #fff; padding: 11px 22px;
+            border-radius: 30px; font-size: 0.88rem; font-weight: 600;
+            z-index: 9999; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+            pointer-events: none;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<header class="admin-header">
+    <div class="admin-brand">Claxxic India</div>
+    <div class="header-nav">
+        <a href="/admin/dashboard" class="nav-btn">📦 Orders</a>
+        <a href="/admin/products" class="nav-btn">👟 Products</a>
+        <a href="/admin/site-settings" class="nav-btn active">🎨 Site Settings</a>
+        <a href="/admin/logout" class="nav-btn danger">Sign Out</a>
+    </div>
+</header>
+
+<main class="page">
+
+    <!-- ── THEME ── -->
+    <div class="panel">
+        <div class="panel-title">🎨 Theme Colour</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Primary Colour</label>
+                <div class="color-row">
+                    <input type="color" id="ss-color" value="{{ site_settings.primary_color or '#2B9FD8' }}"
+                           oninput="document.getElementById('ss-color-hex').textContent=this.value">
+                    <span class="color-hex" id="ss-color-hex">{{ site_settings.primary_color or '#2B9FD8' }}</span>
+                </div>
+                <div class="preset-dots" id="color-presets"></div>
+            </div>
+            <div class="form-group">
+                <label>Hero Font</label>
+                <select id="ss-font">
+                    <option value="default" {% if site_settings.hero_font == 'default' %}selected{% endif %}>Default (System)</option>
+                    <option value="Bebas Neue"       {% if site_settings.hero_font == 'Bebas Neue' %}selected{% endif %}>Bebas Neue — Bold Display</option>
+                    <option value="Playfair Display" {% if site_settings.hero_font == 'Playfair Display' %}selected{% endif %}>Playfair Display — Elegant Serif</option>
+                    <option value="Montserrat"       {% if site_settings.hero_font == 'Montserrat' %}selected{% endif %}>Montserrat — Clean Modern</option>
+                    <option value="Oswald"           {% if site_settings.hero_font == 'Oswald' %}selected{% endif %}>Oswald — Condensed Strong</option>
+                    <option value="Raleway"          {% if site_settings.hero_font == 'Raleway' %}selected{% endif %}>Raleway — Thin Luxury</option>
+                    <option value="Anton"            {% if site_settings.hero_font == 'Anton' %}selected{% endif %}>Anton — Heavy Impact</option>
+                    <option value="Cinzel"           {% if site_settings.hero_font == 'Cinzel' %}selected{% endif %}>Cinzel — Premium Classic</option>
+                </select>
+            </div>
+        </div>
+        <div class="save-bar">
+            <button class="btn-save" onclick="saveSection('theme')">Save Theme</button>
+        </div>
+    </div>
+
+    <!-- ── HERO TEXT ── -->
+    <div class="panel">
+        <div class="panel-title">✍️ Hero Text</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Eyebrow Text</label>
+                <input type="text" id="ss-eyebrow" value="{{ site_settings.hero_eyebrow or 'New Collection 2026' }}" placeholder="New Collection 2026">
+            </div>
+            <div class="form-group">
+                <label>Eyebrow Colour</label>
+                <div class="color-row">
+                    <input type="color" id="ss-eyebrow-color" value="{{ site_settings.hero_eyebrow_color or '#2B9FD8' }}">
+                    <span class="color-hex">Eyebrow tint</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Headline Line 1</label>
+                <input type="text" id="ss-headline" value="{{ site_settings.hero_headline or 'Step Into' }}" placeholder="Step Into">
+            </div>
+            <div class="form-group">
+                <label>Highlighted Word (coloured)</label>
+                <input type="text" id="ss-highlight" value="{{ site_settings.hero_highlight or 'Premium' }}" placeholder="Premium">
+            </div>
+            <div class="form-group">
+                <label>Headline Line 2</label>
+                <input type="text" id="ss-headline2" value="{{ site_settings.hero_headline2 or 'Comfort' }}" placeholder="Comfort">
+            </div>
+            <div class="form-group">
+                <label>Text Colour</label>
+                <div class="color-row">
+                    <input type="color" id="ss-text-color" value="{{ site_settings.hero_text_color or '#ffffff' }}">
+                    <span class="color-hex">Headline colour</span>
+                </div>
+            </div>
+            <div class="form-group full">
+                <label>Subtext</label>
+                <input type="text" id="ss-sub" value="{{ site_settings.hero_sub or '' }}" placeholder="Handpicked sneakers from the world's top brands...">
+            </div>
+            <div class="form-group">
+                <label>Subtext Colour</label>
+                <div class="color-row">
+                    <input type="color" id="ss-sub-color" value="{{ site_settings.hero_sub_color or '#b8d4e8' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>CTA Button Text</label>
+                <input type="text" id="ss-cta" value="{{ site_settings.hero_cta or 'Shop Now' }}" placeholder="Shop Now">
+            </div>
+            <div class="form-group">
+                <label>CTA Button Colour</label>
+                <div class="color-row">
+                    <input type="color" id="ss-cta-color" value="{{ site_settings.hero_cta_color or site_settings.primary_color or '#2B9FD8' }}">
+                    <span class="color-hex">Defaults to theme colour</span>
+                </div>
+            </div>
+        </div>
+
+        <hr class="section-divider">
+        <div class="section-label">Stat Pills (3 circles below button)</div>
+        <div class="form-grid">
+            {% for i in range(1,4) %}
+            <div class="form-group" style="display:flex;flex-direction:row;gap:8px;align-items:flex-end;">
+                <div style="flex:1;">
+                    <label>Pill {{ i }} Number</label>
+                    <input type="text" id="ss-stat{{ i }}-num"
+                           value="{{ site_settings['stat' ~ i ~ '_num'] or ['56+','17','Free'][i-1] }}"
+                           placeholder="{{ ['56+','17','Free'][i-1] }}">
+                </div>
+                <div style="flex:1;">
+                    <label>Pill {{ i }} Label</label>
+                    <input type="text" id="ss-stat{{ i }}-label"
+                           value="{{ site_settings['stat' ~ i ~ '_label'] or ['Styles','Brands','Shipping'][i-1] }}"
+                           placeholder="{{ ['Styles','Brands','Shipping'][i-1] }}">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <hr class="section-divider">
+        <div class="section-label">Feature Tags (right side, desktop)</div>
+        {% for i in range(1,5) %}
+        <div class="tag-row">
+            <input type="text" id="ss-tag{{ i }}-icon" maxlength="4"
+                   value="{{ site_settings['tag' ~ i ~ '_icon'] or ['☁️','⚡','🎨','🔒'][i-1] }}"
+                   placeholder="Icon" style="text-align:center;font-size:1.1rem;">
+            <input type="text" id="ss-tag{{ i }}-title"
+                   value="{{ site_settings['tag' ~ i ~ '_title'] or ['Ultra Comfort','Lightweight','Smart Design','Maximum Grip'][i-1] }}"
+                   placeholder="Title">
+            <input type="text" id="ss-tag{{ i }}-sub"
+                   value="{{ site_settings['tag' ~ i ~ '_sub'] or ['Cloud-foam cushioning','Barely-there feel','Modern sportswear style','Advanced traction sole'][i-1] }}"
+                   placeholder="Subtitle">
+        </div>
+        {% endfor %}
+
+        <div class="save-bar">
+            <button class="btn-save" onclick="saveSection('hero')">Save Hero Text</button>
+        </div>
+    </div>
+
+    <!-- ── 3D MODEL ── -->
+    <div class="panel">
+        <div class="panel-title">🎮 3D Model & Animation</div>
+        <div style="margin-bottom:16px;">
+            <div class="section-label">Upload New Model</div>
+            <label class="model-upload-label">
+                📦 Choose .glb file
+                <input type="file" accept=".glb" id="ss-model-file" onchange="uploadModel(this)">
+            </label>
+            <div id="ss-model-name" style="font-size:0.76rem;color:#2B9FD8;margin-top:8px;">
+                Current: {{ site_settings.model_path or 'sneaker.glb' }}
+            </div>
+            <input type="hidden" id="ss-model-path" value="{{ site_settings.model_path or 'sneaker.glb' }}">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+            <div class="slider-row">
+                <div class="slider-label-row">
+                    <label>Scale</label>
+                    <span id="ss-scale-val">{{ site_settings.model_scale or 3.0 }}</span>
+                </div>
+                <input type="range" id="ss-scale" min="0.5" max="8" step="0.1"
+                       value="{{ site_settings.model_scale or 3.0 }}"
+                       oninput="document.getElementById('ss-scale-val').textContent=parseFloat(this.value).toFixed(1)">
+            </div>
+            <div class="slider-row">
+                <div class="slider-label-row">
+                    <label>Vertical Position</label>
+                    <span id="ss-y-val">{{ site_settings.model_y or 0.8 }}</span>
+                </div>
+                <input type="range" id="ss-y" min="-3" max="3" step="0.1"
+                       value="{{ site_settings.model_y or 0.8 }}"
+                       oninput="document.getElementById('ss-y-val').textContent=parseFloat(this.value).toFixed(1)">
+            </div>
+            <div class="slider-row">
+                <div class="slider-label-row">
+                    <label>Rotation Speed</label>
+                    <span id="ss-speed-val">{{ site_settings.model_speed or 0.006 }}</span>
+                </div>
+                <input type="range" id="ss-speed" min="0" max="0.05" step="0.001"
+                       value="{{ site_settings.model_speed or 0.006 }}"
+                       oninput="document.getElementById('ss-speed-val').textContent=parseFloat(this.value).toFixed(3)">
+            </div>
+        </div>
+        <div class="save-bar">
+            <button class="btn-save" onclick="saveSection('model')">Save Model Settings</button>
+        </div>
+    </div>
+
+    <!-- ── OFFER RIBBON ── -->
+    <div class="panel">
+        <div class="panel-title">🎁 Offer Ribbon</div>
+        <div class="form-grid">
+            <div class="form-group full">
+                <label>Ribbon Text</label>
+                <input type="text" id="offer-text" value="{{ offer.text }}"
+                       placeholder="🔥 Flat 20% OFF on all Nike shoes this weekend!">
+            </div>
+            <div class="form-group">
+                <label>Background Colour</label>
+                <div class="color-row">
+                    <input type="color" id="offer-bg" value="{{ offer.bg_color }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Text Colour</label>
+                <div class="color-row">
+                    <input type="color" id="offer-fg" value="{{ offer.text_color }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Active</label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:4px;">
+                    <input type="checkbox" id="offer-active" {% if offer.active %}checked{% endif %}
+                           style="width:18px;height:18px;accent-color:#2B9FD8;">
+                    <span id="offer-toggle-label" style="font-size:0.88rem;font-weight:600;">{{ "ON" if offer.active else "OFF" }}</span>
+                </label>
+            </div>
+        </div>
+        <div class="save-bar">
+            <button class="btn-save" onclick="saveOffer()">Save Ribbon</button>
+        </div>
+    </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+const PRESETS = ['#2B9FD8','#7C3AED','#059669','#DC2626','#D97706','#DB2777','#0891B2','#1D4ED8'];
+
+// Build colour preset dots
+const presetWrap = document.getElementById('color-presets');
+PRESETS.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'preset-dot';
+    d.style.background = c;
+    d.title = c;
+    d.onclick = () => {
+        document.getElementById('ss-color').value = c;
+        document.getElementById('ss-color-hex').textContent = c;
+    };
+    presetWrap.appendChild(d);
+});
+
+// Toggle offer label
+document.getElementById('offer-active').addEventListener('change', function() {
+    document.getElementById('offer-toggle-label').textContent = this.checked ? 'ON' : 'OFF';
+});
+
+function showToast(msg, ok=true) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = ok ? '#1a7ab0' : '#e53e3e';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function g(id) { return document.getElementById(id)?.value || ''; }
+
+async function saveSection(section) {
+    let payload = {};
+
+    if (section === 'theme') {
+        payload = {
+            primary_color: g('ss-color'),
+            hero_font:     g('ss-font'),
+        };
+    } else if (section === 'hero') {
+        payload = {
+            hero_eyebrow:       g('ss-eyebrow'),
+            hero_eyebrow_color: g('ss-eyebrow-color'),
+            hero_headline:      g('ss-headline'),
+            hero_highlight:     g('ss-highlight'),
+            hero_headline2:     g('ss-headline2'),
+            hero_text_color:    g('ss-text-color'),
+            hero_sub:           g('ss-sub'),
+            hero_sub_color:     g('ss-sub-color'),
+            hero_cta:           g('ss-cta'),
+            hero_cta_color:     g('ss-cta-color'),
+            stat1_num:   g('ss-stat1-num'),   stat1_label: g('ss-stat1-label'),
+            stat2_num:   g('ss-stat2-num'),   stat2_label: g('ss-stat2-label'),
+            stat3_num:   g('ss-stat3-num'),   stat3_label: g('ss-stat3-label'),
+            tag1_icon:   g('ss-tag1-icon'),   tag1_title:  g('ss-tag1-title'),  tag1_sub: g('ss-tag1-sub'),
+            tag2_icon:   g('ss-tag2-icon'),   tag2_title:  g('ss-tag2-title'),  tag2_sub: g('ss-tag2-sub'),
+            tag3_icon:   g('ss-tag3-icon'),   tag3_title:  g('ss-tag3-title'),  tag3_sub: g('ss-tag3-sub'),
+            tag4_icon:   g('ss-tag4-icon'),   tag4_title:  g('ss-tag4-title'),  tag4_sub: g('ss-tag4-sub'),
+        };
+    } else if (section === 'model') {
+        payload = {
+            model_path:  g('ss-model-path'),
+            model_scale: parseFloat(g('ss-scale')),
+            model_y:     parseFloat(g('ss-y')),
+            model_speed: parseFloat(g('ss-speed')),
+        };
+    }
+
+    try {
+        const res  = await fetch('/api/admin/site-settings', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.redirected) { showToast('Session expired', false); return; }
+        const data = await res.json();
+        if (data.success) showToast('✅ Saved! Refresh homepage to see changes.');
+        else showToast(data.error || 'Failed', false);
+    } catch(e) { showToast('Network error', false); }
+}
+
+async function uploadModel(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append('model', file);
+    showToast('Uploading model...');
+    try {
+        const res  = await fetch('/api/admin/upload-model', { method: 'POST', credentials: 'include', body: form });
+        if (res.redirected) { showToast('Session expired', false); return; }
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('ss-model-path').value = data.path;
+            document.getElementById('ss-model-name').textContent = 'Uploaded: ' + data.path;
+            showToast('✅ Model uploaded! Save to apply.');
+        } else {
+            showToast(data.error || 'Upload failed', false);
+        }
+    } catch(e) { showToast('Upload failed', false); }
+}
+
+async function saveOffer() {
+    const payload = {
+        active:     document.getElementById('offer-active').checked,
+        text:       g('offer-text'),
+        bg_color:   g('offer-bg'),
+        text_color: g('offer-fg'),
+    };
+    try {
+        const res  = await fetch('/api/admin/offer', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.redirected) { showToast('Session expired', false); return; }
+        const data = await res.json();
+        if (data.success) showToast(payload.active && payload.text ? '✅ Ribbon is LIVE!' : '✅ Ribbon saved (off)');
+        else showToast(data.error || 'Failed', false);
+    } catch(e) { showToast('Network error', false); }
+}
+</script>
+</body>
+</html>
