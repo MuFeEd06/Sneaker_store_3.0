@@ -381,8 +381,9 @@
                     {{ site_settings.hero_headline2 or 'Comfort' }}
                 </h2>
 
+                {% set _hero_sub = site_settings.hero_sub if site_settings.hero_sub else "Handpicked sneakers from the world's top brands. Delivered across India." %}
                 <p class="hero-sub" style="color:{{ site_settings.hero_sub_color or 'rgba(255,255,255,0.72)' }}">
-                    {{ site_settings.hero_sub or 'Handpicked sneakers from the world's top brands. Delivered across India.' }}
+                    {{ _hero_sub }}
                 </p>
 
                 <a class="hero-cta" href="/#shop">
