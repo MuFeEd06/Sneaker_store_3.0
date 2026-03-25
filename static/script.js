@@ -482,22 +482,22 @@ function getBrandConfig(name) {
 /* =================================================
    BRAND TILES (HOMEPAGE)
 ================================================= */
-async function renderBrandTiles() {
+function renderBrandTiles() {
     const grid = document.getElementById("brand-tiles-grid");
     if (!grid) return;
     grid.innerHTML = "";
 
-    // Fetch disabled brands from site settings
-    let disabledBrands = new Set();
-    try {
-        const res  = await fetch("/api/site-settings");
-        const data = await res.json();
-        const raw  = data.disabled_brands || "[]";
-        disabledBrands = new Set(JSON.parse(raw));
-    } catch {}
+    // Read hidden brands from section data attribute (set by Jinja2)
+    const section = document.getElementById("collections");
+    const hiddenRaw = section?.dataset.hiddenBrands || "";
+    const hiddenSet = new Set(
+        hiddenRaw.split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
+    );
 
-    // Filter out disabled brands
-    const visibleBrands = BRANDS.filter(b => !disabledBrands.has(b.name));
+    const visibleBrands = BRANDS.filter(b =>
+        !hiddenSet.has(b.slug.toLowerCase()) &&
+        !hiddenSet.has(b.name.toLowerCase())
+    );
 
     visibleBrands.forEach((brand, i) => {
         const tile = document.createElement("a");
@@ -522,6 +522,7 @@ async function renderBrandTiles() {
         `;
         grid.appendChild(tile);
     });
+
 
     initScrollAnimation();
 }
