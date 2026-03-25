@@ -184,8 +184,6 @@ DEFAULT_SITE_SETTINGS = {
     "tag2_icon":  "⚡", "tag2_title": "Lightweight",     "tag2_sub": "Barely-there feel",
     "tag3_icon":  "🎨", "tag3_title": "Smart Design",    "tag3_sub": "Modern sportswear style",
     "tag4_icon":  "🔒", "tag4_title": "Maximum Grip",    "tag4_sub": "Advanced traction sole",
-    # Brand visibility — JSON array of disabled brand names
-    "disabled_brands": "[]",
 }
 
 def _build_theme(hex_color):
@@ -230,10 +228,17 @@ def get_site_settings():
 
 def save_site_settings(data):
     row = Setting.query.get("site_settings")
-    # Only store site_settings keys, not offer
-    to_save = {k: v for k, v in data.items() if k != "offer"}
-    if row: row.value = json.dumps(to_save)
-    else: db.session.add(Setting(key="site_settings", value=json.dumps(to_save)))
+    # Load existing settings first, then MERGE incoming keys on top
+    # This prevents partial saves (e.g. saving Theme) from wiping other sections
+    existing = {}
+    if row:
+        try: existing = json.loads(row.value or "{}")
+        except: existing = {}
+    # Strip offer key, then merge
+    incoming = {k: v for k, v in data.items() if k != "offer"}
+    existing.update(incoming)
+    if row: row.value = json.dumps(existing)
+    else: db.session.add(Setting(key="site_settings", value=json.dumps(existing)))
     db.session.commit()
 
 @app.context_processor
@@ -404,13 +409,12 @@ def api_public_site_settings():
     s = get_site_settings()
     # Only expose safe fields to public
     return jsonify({
-        "primary_color":    s.get("primary_color","#2B9FD8"),
-        "hero_font":        s.get("hero_font","default"),
-        "model_path":       s.get("model_path","sneaker.glb"),
-        "model_scale":      s.get("model_scale",3.0),
-        "model_y":          s.get("model_y",0.8),
-        "model_speed":      s.get("model_speed",0.006),
-        "disabled_brands":  s.get("disabled_brands","[]"),
+        "primary_color": s.get("primary_color","#2B9FD8"),
+        "hero_font":     s.get("hero_font","default"),
+        "model_path":    s.get("model_path","sneaker.glb"),
+        "model_scale":   s.get("model_scale",3.0),
+        "model_y":       s.get("model_y",0.8),
+        "model_speed":   s.get("model_speed",0.006),
     })
 
 
@@ -515,6 +519,7 @@ def api_save_site_settings():
         "stat1_num","stat1_label","stat2_num","stat2_label","stat3_num","stat3_label",
         "tag1_icon","tag1_title","tag1_sub","tag2_icon","tag2_title","tag2_sub",
         "tag3_icon","tag3_title","tag3_sub","tag4_icon","tag4_title","tag4_sub",
+        "disabled_brands",
     }
     clean = {k: v for k, v in data.items() if k in allowed_keys}
     save_site_settings(clean)
