@@ -184,10 +184,11 @@ DEFAULT_SITE_SETTINGS = {
     "tag2_icon":  "⚡", "tag2_title": "Lightweight",     "tag2_sub": "Barely-there feel",
     "tag3_icon":  "🎨", "tag3_title": "Smart Design",    "tag3_sub": "Modern sportswear style",
     "tag4_icon":  "🔒", "tag4_title": "Maximum Grip",    "tag4_sub": "Advanced traction sole",
-    # Brand section visibility — comma-separated list of hidden brand slugs
-    # empty string means all brands visible
+    # Brand section visibility
     "hidden_brands": "",
     "show_brands_section": True,
+    # Size display unit on product page: "uk", "euro", or "both"
+    "size_unit": "both",
 }
 
 def _build_theme(hex_color):
@@ -531,6 +532,7 @@ def api_save_site_settings():
         "tag1_icon","tag1_title","tag1_sub","tag2_icon","tag2_title","tag2_sub",
         "tag3_icon","tag3_title","tag3_sub","tag4_icon","tag4_title","tag4_sub",
         "hidden_brands","show_brands_section",
+        "size_unit",
     }
     clean = {k: v for k, v in data.items() if k in allowed_keys}
     save_site_settings(clean)
