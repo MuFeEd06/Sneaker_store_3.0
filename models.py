@@ -37,17 +37,11 @@ class Product(db.Model):
         return sum(self.get_stock().values())
 
     def is_out_of_stock(self):
-        try:
-            s = self.get_stock()
-            return len(s) > 0 and all(v <= 0 for v in s.values())
-        except Exception:
-            return False
+        s = self.get_stock()
+        return len(s) > 0 and all(v <= 0 for v in s.values())
 
     def to_dict(self):
-        try:
-            stock = self.get_stock()
-        except Exception:
-            stock = {}
+        stock = self.get_stock()
         return {
             "id":             self.id,
             "name":           self.name,
@@ -59,7 +53,7 @@ class Product(db.Model):
             "colors":         json.loads(self.colors or "[]"),
             "stock":          stock,
             "total_stock":    sum(stock.values()) if stock else None,
-            "out_of_stock":   self.is_out_of_stock() if stock else False,
+            "out_of_stock":   self.is_out_of_stock(),
         }
 
 

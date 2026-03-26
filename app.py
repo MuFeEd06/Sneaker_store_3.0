@@ -473,13 +473,8 @@ def api_add_product():
     p = Product(name=name, brand=brand, price=price,
                 image=data.get("image",""), tag=data.get("tag",""),
                 sizes=json.dumps(data.get("sizes",[])),
-                colors=json.dumps(data.get("colors",[])))
-    # stock column — only set if it exists in the model
-    try:
-        if hasattr(p, 'stock'):
-            p.stock = json.dumps(data.get("stock",{}))
-    except Exception:
-        pass
+                colors=json.dumps(data.get("colors",[])),
+                stock=json.dumps(data.get("stock",{})))
     db.session.add(p)
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()}), 201
@@ -499,13 +494,7 @@ def api_update_product(product_id):
     p.sizes  = json.dumps(data.get("sizes",  json.loads(p.sizes  or "[]")))
     p.colors = json.dumps(data.get("colors", json.loads(p.colors or "[]")))
     if "stock" in data:
-        try:
-            if hasattr(p, 'set_stock'):
-                p.set_stock(data["stock"])
-            elif hasattr(p, 'stock'):
-                p.stock = json.dumps(data["stock"])
-        except Exception as e:
-            print(f"[claxxic] stock update skipped: {e}")
+        p.set_stock(data["stock"])
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()})
 
@@ -635,9 +624,8 @@ def _adjust_stock(order, delta):
     try:
         for item in order.items:
             product = Product.query.get(item.product_id)
-            if not product or not hasattr(product, 'get_stock'): continue
+            if not product: continue
             stock = product.get_stock()
-            if not stock: continue
             color_key = item.color or "default"
             size_key  = item.size  or "default"
             key = f"{color_key}|{size_key}"
