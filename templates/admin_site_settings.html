@@ -76,7 +76,16 @@
         .radio-opt.active { background: #eaf3fa; border-color: #2B9FD8; color: #2B9FD8; }
         #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1a2e; color: #fff; padding: 11px 22px; border-radius: 30px; font-size: 0.88rem; font-weight: 600; z-index: 9999; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; }
         #toast.show { transform: translateX(-50%) translateY(0); }
-        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 640px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .page { padding: 16px 3% 60px; }
+            .panel { padding: 18px 14px; }
+            .header-nav { gap: 4px; flex-wrap: wrap; }
+            .nav-btn { padding: 5px 10px; font-size: 0.76rem; }
+            .admin-brand { font-size: 1.1rem; }
+            .tag-row { grid-template-columns: 48px 1fr; }
+            .tag-row input:last-of-type { grid-column: 1/-1; }
+        }
     </style>
 </head>
 <body>
@@ -204,6 +213,57 @@
         <div id="brand-toggle-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;"></div>
         <div style="font-size:0.78rem;color:#9badb8;margin-top:12px;">Hidden brands won't appear in the homepage grid, but their product pages still work.</div>
         <div class="save-bar"><button class="btn-save" onclick="saveSection('brands')">Save Brand Visibility</button></div>
+    </div>
+
+    <!-- ── POLICY PAGES ── -->
+    <div class="panel">
+        <div class="panel-title">📄 Policy Pages</div>
+        <p style="font-size:0.85rem;color:#5a6a7a;margin-bottom:20px;">
+            These pages are live at <code>/privacy</code>, <code>/refund</code>, <code>/shipping</code>.
+            Use plain text or simple markdown (# heading, ## subheading, **bold**, - list item).
+        </p>
+
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+            <button type="button" onclick="showPolicy('privacy')"
+                    id="ptab-privacy" class="size-type-btn active">Privacy Policy</button>
+            <button type="button" onclick="showPolicy('refund')"
+                    id="ptab-refund" class="size-type-btn">Refund Policy</button>
+            <button type="button" onclick="showPolicy('shipping')"
+                    id="ptab-shipping" class="size-type-btn">Shipping Policy</button>
+        </div>
+
+        <div id="policy-editor-privacy">
+            <textarea id="ss-policy-privacy" rows="10"
+                style="width:100%;padding:12px;border:1.5px solid #d0e6f5;border-radius:8px;
+                       font-size:0.88rem;font-family:inherit;outline:none;resize:vertical;
+                       background:#f4f8fb;color:#1a1a2e;line-height:1.6;"
+                placeholder="# Privacy Policy&#10;&#10;Your privacy is important to us..."></textarea>
+        </div>
+        <div id="policy-editor-refund" style="display:none;">
+            <textarea id="ss-policy-refund" rows="10"
+                style="width:100%;padding:12px;border:1.5px solid #d0e6f5;border-radius:8px;
+                       font-size:0.88rem;font-family:inherit;outline:none;resize:vertical;
+                       background:#f4f8fb;color:#1a1a2e;line-height:1.6;"
+                placeholder="# Refund Policy&#10;&#10;We accept returns within 7 days..."></textarea>
+        </div>
+        <div id="policy-editor-shipping" style="display:none;">
+            <textarea id="ss-policy-shipping" rows="10"
+                style="width:100%;padding:12px;border:1.5px solid #d0e6f5;border-radius:8px;
+                       font-size:0.88rem;font-family:inherit;outline:none;resize:vertical;
+                       background:#f4f8fb;color:#1a1a2e;line-height:1.6;"
+                placeholder="# Shipping Policy&#10;&#10;We ship across India..."></textarea>
+        </div>
+
+        <div style="font-size:0.75rem;color:#9badb8;margin-top:10px;">
+            Tip: Use # for main heading, ## for subheadings, **bold text**, - for bullet points.
+            View live: <a href="/privacy" target="_blank" style="color:#2B9FD8;">/privacy</a>
+            · <a href="/refund" target="_blank" style="color:#2B9FD8;">/refund</a>
+            · <a href="/shipping" target="_blank" style="color:#2B9FD8;">/shipping</a>
+        </div>
+
+        <div class="save-bar">
+            <button class="btn-save" onclick="saveSection('policies')">Save Policies</button>
+        </div>
     </div>
 
 </main>
@@ -349,6 +409,11 @@ async function loadSettings() {
         buildBrandToggles(s.hidden_brands || '');
         document.getElementById('ss-show-brands').checked = s.show_brands_section !== false;
 
+        // Policy pages
+        if (s.policy_privacy)  document.getElementById('ss-policy-privacy').value  = s.policy_privacy;
+        if (s.policy_refund)   document.getElementById('ss-policy-refund').value   = s.policy_refund;
+        if (s.policy_shipping) document.getElementById('ss-policy-shipping').value  = s.policy_shipping;
+
     } catch(e) {
         showToast('Failed to load settings — ' + e.message, false);
         buildTagRows({});
@@ -410,6 +475,9 @@ async function saveSection(section) {
             model_speed: parseFloat(g('ss-speed')),
         }, '✅ Model settings saved!');
 
+    } else if (section === 'policies') {
+        await savePolicies();
+        return;
     } else if (section === 'brands') {
         await apiSave({
             show_brands_section: document.getElementById('ss-show-brands').checked,
@@ -453,6 +521,26 @@ async function uploadModel(input) {
             showToast('✅ Model uploaded! Click "Save Model Settings" to apply.');
         } else showToast(data.error || 'Upload failed', false);
     } catch(e) { showToast('Upload failed', false); }
+}
+
+/* ── POLICY EDITOR ── */
+let _activePolicy = "privacy";
+function showPolicy(type) {
+    ["privacy","refund","shipping"].forEach(t => {
+        document.getElementById("policy-editor-" + t).style.display = t === type ? "" : "none";
+        document.getElementById("ptab-" + t).classList.toggle("active", t === type);
+    });
+    _activePolicy = type;
+}
+
+// Load policy content in loadSettings (called once)
+// Save all three at once
+async function savePolicies() {
+    await apiSave({
+        policy_privacy:  document.getElementById("ss-policy-privacy").value,
+        policy_refund:   document.getElementById("ss-policy-refund").value,
+        policy_shipping: document.getElementById("ss-policy-shipping").value,
+    }, "✅ Policies saved!");
 }
 
 // Kick off

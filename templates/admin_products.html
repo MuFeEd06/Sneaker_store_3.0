@@ -297,6 +297,28 @@
                 justify-content: center;
             }
         }
+
+        /* ── SIZE TYPE BUTTONS ── */
+        .size-type-btn {
+            padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;
+            border: 1.5px solid #d0e6f5; background: #f4f8fb; color: #5a6a7a;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .size-type-btn.active { background: #2B9FD8; color: #fff; border-color: #2B9FD8; }
+
+        /* ── MOBILE ADMIN LAYOUT ── */
+        @media (max-width: 640px) {
+            .page { padding: 16px 3% 60px; }
+            .modal { padding: 20px 14px; border-radius: 14px; }
+            .modal-overlay { padding: 12px 6px; }
+            .toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
+            .search-box { width: 100% !important; }
+            .brand-filter { width: 100%; }
+            .product-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .header-nav { gap: 4px; flex-wrap: wrap; }
+            .nav-btn { padding: 5px 10px; font-size: 0.76rem; }
+            .admin-brand { font-size: 1.1rem; }
+        }
     </style>
 </head>
 <body>
@@ -312,168 +334,6 @@
 </header>
 
 <main class="page">
-
-    <!-- OFFER RIBBON PANEL -->
-    <div class="offer-panel">
-        <div class="panel-title">🎁 Offer Ribbon — shown on homepage</div>
-        <div class="offer-row">
-            <div class="offer-text-wrap">
-                <label>Offer Text</label>
-                <input type="text" id="offer-text" placeholder="e.g. 🔥 Flat 20% OFF on all Nike shoes this weekend!"
-                       value="{{ offer.text }}">
-            </div>
-            <div class="color-wrap">
-                <label>BG</label>
-                <input type="color" id="offer-bg" value="{{ offer.bg_color }}">
-            </div>
-            <div class="color-wrap">
-                <label>Text</label>
-                <input type="color" id="offer-fg" value="{{ offer.text_color }}">
-            </div>
-            <div class="toggle-wrap">
-                <label>Active</label>
-                <label class="toggle">
-                    <input type="checkbox" id="offer-active" {% if offer.active %}checked{% endif %}>
-                    <div class="toggle-track"></div>
-                    <span class="toggle-label" id="offer-toggle-label">{{ "ON" if offer.active else "OFF" }}</span>
-                </label>
-            </div>
-            <div style="display:flex;flex-direction:column;justify-content:flex-end;">
-                <button class="nav-btn primary" onclick="saveOffer()">Save Ribbon</button>
-            </div>
-        </div>
-        <div class="offer-preview {% if offer.active and offer.text %}visible{% endif %}"
-             id="offer-preview"
-             style="background:{{ offer.bg_color }};color:{{ offer.text_color }};">
-            {{ offer.text }}
-        </div>
-    </div>
-
-    <!-- SITE SETTINGS PANEL -->
-    <div class="offer-panel" id="site-settings-panel">
-        <div class="panel-title">🎨 Site Settings — theme, font, 3D model</div>
-        <div class="offer-row" style="margin-bottom:18px;">
-            <div class="color-wrap">
-                <label>Theme Colour</label>
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <input type="color" id="ss-color" value="{{ site_settings.primary_color or '#2B9FD8' }}"
-                           oninput="previewTheme(this.value)">
-                    <span id="ss-color-hex" style="font-size:0.8rem;color:#5a6a7a;font-family:monospace;">{{ site_settings.primary_color or '#2B9FD8' }}</span>
-                </div>
-                <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;" id="color-presets"></div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:6px;min-width:200px;">
-                <label style="font-size:0.78rem;color:#5a6a7a;font-weight:600;">Hero Text Font</label>
-                <select id="ss-font" style="padding:9px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.88rem;background:#fff;color:#1a1a2e;outline:none;cursor:pointer;">
-                    <option value="default">Default (System)</option>
-                    <option value="Bebas Neue">Bebas Neue — Bold Display</option>
-                    <option value="Playfair Display">Playfair Display — Elegant Serif</option>
-                    <option value="Montserrat">Montserrat — Clean Modern</option>
-                    <option value="Oswald">Oswald — Condensed Strong</option>
-                    <option value="Raleway">Raleway — Thin Luxury</option>
-                    <option value="Anton">Anton — Heavy Impact</option>
-                    <option value="Cinzel">Cinzel — Premium Classic</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Hero Text Editor -->
-        <div style="border-top:1px solid #eaf3fa;padding-top:18px;margin-top:4px;">
-            <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#9badb8;margin-bottom:14px;">Hero Text</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Eyebrow Text</label>
-                    <input type="text" id="ss-eyebrow" placeholder="New Collection 2026"
-                           style="padding:8px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;background:#f4f8fb;color:#1a1a2e;outline:none;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Eyebrow Colour</label>
-                    <input type="color" id="ss-eyebrow-color" value="#2B9FD8" style="width:48px;height:36px;border:1.5px solid #d0e6f5;border-radius:8px;cursor:pointer;padding:2px;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Headline Line 1</label>
-                    <input type="text" id="ss-headline" placeholder="Step Into"
-                           style="padding:8px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;background:#f4f8fb;color:#1a1a2e;outline:none;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Highlighted Word</label>
-                    <input type="text" id="ss-highlight" placeholder="Premium"
-                           style="padding:8px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;background:#f4f8fb;color:#1a1a2e;outline:none;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Headline Line 2</label>
-                    <input type="text" id="ss-headline2" placeholder="Comfort"
-                           style="padding:8px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;background:#f4f8fb;color:#1a1a2e;outline:none;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">CTA Button Text</label>
-                    <input type="text" id="ss-cta" placeholder="Shop Now"
-                           style="padding:8px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;background:#f4f8fb;color:#1a1a2e;outline:none;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;grid-column:1/-1;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Subtext</label>
-                    <input type="text" id="ss-sub" placeholder="Handpicked sneakers from the world's top brands..."
-                           style="padding:8px 12px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;background:#f4f8fb;color:#1a1a2e;outline:none;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Text Colour</label>
-                    <input type="color" id="ss-text-color" value="#ffffff" style="width:48px;height:36px;border:1.5px solid #d0e6f5;border-radius:8px;cursor:pointer;padding:2px;">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <label style="font-size:0.75rem;color:#5a6a7a;font-weight:600;">Subtext Colour</label>
-                    <input type="color" id="ss-sub-color" value="#b8d4e8" style="width:48px;height:36px;border:1.5px solid #d0e6f5;border-radius:8px;cursor:pointer;padding:2px;">
-                </div>
-            </div>
-        </div>
-
-        <div style="border-top:1px solid #eaf3fa;padding-top:18px;">
-            <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#9badb8;margin-bottom:14px;">3D Model</div>
-            <div class="offer-row" style="align-items:flex-start;gap:24px;">
-                <div style="display:flex;flex-direction:column;gap:8px;">
-                    <label style="font-size:0.78rem;color:#5a6a7a;font-weight:600;">Upload New .glb Model</label>
-                    <label style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;background:#eaf3fa;color:#2B9FD8;border:1.5px solid #2B9FD8;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;position:relative;overflow:hidden;width:fit-content;">
-                        📦 Choose .glb file
-                        <input type="file" accept=".glb" id="ss-model-file" style="position:absolute;inset:0;opacity:0;cursor:pointer;" onchange="uploadModel(this)">
-                    </label>
-                    <span id="ss-model-name" style="font-size:0.76rem;color:#2B9FD8;"></span>
-                    <input type="hidden" id="ss-model-path" value="">
-                </div>
-                <div style="display:flex;flex-direction:column;gap:14px;flex:1;max-width:280px;">
-                    <div>
-                        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-                            <label style="font-size:0.78rem;color:#5a6a7a;font-weight:600;">Scale</label>
-                            <span id="ss-scale-val" style="font-size:0.78rem;color:#2B9FD8;font-weight:700;">3.0</span>
-                        </div>
-                        <input type="range" id="ss-scale" min="0.5" max="8" step="0.1" value="3.0"
-                               oninput="document.getElementById('ss-scale-val').textContent=parseFloat(this.value).toFixed(1)"
-                               style="width:100%;accent-color:#2B9FD8;">
-                    </div>
-                    <div>
-                        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-                            <label style="font-size:0.78rem;color:#5a6a7a;font-weight:600;">Vertical Position</label>
-                            <span id="ss-y-val" style="font-size:0.78rem;color:#2B9FD8;font-weight:700;">0.8</span>
-                        </div>
-                        <input type="range" id="ss-y" min="-3" max="3" step="0.1" value="0.8"
-                               oninput="document.getElementById('ss-y-val').textContent=parseFloat(this.value).toFixed(1)"
-                               style="width:100%;accent-color:#2B9FD8;">
-                    </div>
-                    <div>
-                        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-                            <label style="font-size:0.78rem;color:#5a6a7a;font-weight:600;">Rotation Speed</label>
-                            <span id="ss-speed-val" style="font-size:0.78rem;color:#2B9FD8;font-weight:700;">0.006</span>
-                        </div>
-                        <input type="range" id="ss-speed" min="0" max="0.05" step="0.001" value="0.006"
-                               oninput="document.getElementById('ss-speed-val').textContent=parseFloat(this.value).toFixed(3)"
-                               style="width:100%;accent-color:#2B9FD8;">
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid #eaf3fa;">
-            <button class="nav-btn primary" onclick="saveSiteSettings()">💾 Save Site Settings</button>
-        </div>
-    </div>
-
     <!-- PRODUCT TOOLBAR -->
     <div class="toolbar">
         <div class="toolbar-title">Products ({{ products | length }})</div>
@@ -572,15 +432,13 @@
             <input type="hidden" id="f-image">
         </div>
 
-        <div class="form-group full">
+                <div class="form-group full">
             <label>Sizes</label>
-            <!-- Step 1: choose size type -->
             <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-                <button type="button" class="size-type-btn active" data-type="uk"   onclick="setSizeType('uk')">🇬🇧 UK Sizes</button>
-                <button type="button" class="size-type-btn"        data-type="euro" onclick="setSizeType('euro')">🇪🇺 Euro Sizes</button>
+                <button type="button" class="size-type-btn active" data-type="uk"   onclick="setSizeType('uk')">🇬🇧 UK</button>
+                <button type="button" class="size-type-btn"        data-type="euro" onclick="setSizeType('euro')">🇪🇺 Euro</button>
                 <button type="button" class="size-type-btn"        data-type="both" onclick="setSizeType('both')">Both</button>
             </div>
-            <!-- Step 2: chips for selected type -->
             <div class="sizes-wrap" id="sizes-wrap"></div>
         </div>
 
@@ -730,17 +588,16 @@ function openEditModal(product) {
     if (product.image) {
         pathEl.textContent = product.image;
         const prev = document.getElementById("f-image-preview");
-        // Supabase URLs are already absolute (https://...), local paths need /static/ prefix
         prev.src = product.image.startsWith("http") ? product.image : "/static/" + product.image;
         prev.style.display = "block";
     }
 
-    // Sizes — detect type from existing sizes
+    // Sizes — detect type and render chips
     const sizes = product.sizes || [];
     _sizeType = detectSizeType(sizes);
-    document.querySelectorAll(".size-type-btn").forEach(b => {
-        b.classList.toggle("active", b.dataset.type === _sizeType);
-    });
+    document.querySelectorAll(".size-type-btn").forEach(b =>
+        b.classList.toggle("active", b.dataset.type === _sizeType)
+    );
     renderSizeChipsAdmin(sizes);
 
     // Colors
@@ -748,6 +605,9 @@ function openEditModal(product) {
 
     currentBrand = product.brand;
     document.getElementById("modal-overlay").classList.add("open");
+
+    // Build inventory grid after modal is open (uses sizes + colors set above)
+    setTimeout(() => buildInventoryGrid(product), 50);
 }
 
 function closeModal() {
@@ -766,7 +626,9 @@ function resetForm() {
     document.getElementById("f-image-path").textContent  = "";
     document.getElementById("f-image-preview").style.display = "none";
     _sizeType = "uk";
-    document.querySelectorAll(".size-type-btn").forEach(b => b.classList.toggle("active", b.dataset.type === "uk"));
+    document.querySelectorAll(".size-type-btn").forEach(b =>
+        b.classList.toggle("active", b.dataset.type === "uk")
+    );
     renderSizeChipsAdmin([]);
     document.getElementById("colors-list").innerHTML = "";
     currentBrand = "";
@@ -779,48 +641,42 @@ let _sizeType = "uk";
 
 function setSizeType(type) {
     _sizeType = type;
-    // Update button styles
-    document.querySelectorAll(".size-type-btn").forEach(b => {
-        b.classList.toggle("active", b.dataset.type === type);
-    });
-    // Re-render chips preserving current selection
-    const currentSelected = getSelectedSizes();
-    renderSizeChipsAdmin(currentSelected);
+    document.querySelectorAll(".size-type-btn").forEach(b =>
+        b.classList.toggle("active", b.dataset.type === type)
+    );
+    const current = getSelectedSizes();
+    renderSizeChipsAdmin(current);
 }
 
 function renderSizeChipsAdmin(preselected = []) {
     const wrap = document.getElementById("sizes-wrap");
     if (!wrap) return;
-
-    let sizes = [];
-    if (_sizeType === "uk")   sizes = UK_SIZES;
-    if (_sizeType === "euro") sizes = EURO_SIZES;
-    if (_sizeType === "both") sizes = [...UK_SIZES, ...EURO_SIZES];
-
+    const sizes = _sizeType === "euro" ? EURO_SIZES
+                : _sizeType === "both" ? [...UK_SIZES, ...EURO_SIZES]
+                : UK_SIZES;
     wrap.innerHTML = "";
     sizes.forEach(s => {
         const chip = document.createElement("div");
-        chip.className   = "size-chip" + (preselected.includes(s) ? " selected" : "");
+        chip.className    = "size-chip" + (preselected.includes(s) ? " selected" : "");
         chip.dataset.size = s;
         chip.textContent  = s;
-        chip.onclick = () => chip.classList.toggle("selected");
+        chip.onclick      = () => chip.classList.toggle("selected");
         wrap.appendChild(chip);
     });
+}
+
+function detectSizeType(sizes) {
+    if (!sizes || !sizes.length) return "uk";
+    const hasUK   = sizes.some(s => s.startsWith("UK"));
+    const hasEuro = sizes.some(s => s.startsWith("EU"));
+    if (hasUK && hasEuro) return "both";
+    return hasEuro ? "euro" : "uk";
 }
 
 function toggleSize(el) { el.classList.toggle("selected"); }
 
 function getSelectedSizes() {
     return [...document.querySelectorAll(".size-chip.selected")].map(c => c.dataset.size);
-}
-
-function detectSizeType(sizes) {
-    if (!sizes || sizes.length === 0) return "uk";
-    const hasUK   = sizes.some(s => s.startsWith("UK"));
-    const hasEuro = sizes.some(s => s.startsWith("EU"));
-    if (hasUK && hasEuro) return "both";
-    if (hasEuro) return "euro";
-    return "uk";
 }
 
 /* ── IMAGE UPLOAD — MAIN ── */
@@ -946,10 +802,7 @@ async function saveProduct() {
     const name  = document.getElementById("f-name").value.trim();
     const brand = document.getElementById("f-brand").value.trim();
     const price = parseInt(document.getElementById("f-price").value);
-
-    if (!name || !brand || !price) {
-        showToast("Name, brand and price are required", false); return;
-    }
+    if (!name || !brand || !price) { showToast("Name, brand and price are required", false); return; }
 
     const payload = {
         name, brand, price,
@@ -957,23 +810,14 @@ async function saveProduct() {
         image:  document.getElementById("f-image").value,
         sizes:  getSelectedSizes(),
         colors: getColorRows(),
+        stock:  typeof collectStockData === "function" ? collectStockData() : {},
     };
 
     const url    = editingId ? `/api/admin/products/${editingId}` : "/api/admin/products";
     const method = editingId ? "PUT" : "POST";
-
     try {
-        const res  = await fetch(url, {
-            method,
-            credentials: "include",   /* ← FIXES session cookie */
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(payload)
-        });
-        if (res.redirected) {
-            showToast("Session expired — please log in again", false);
-            setTimeout(() => window.location.href = "/admin", 1500);
-            return;
-        }
+        const res  = await fetch(url, { method, credentials:"include", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+        if (res.redirected) { showToast("Session expired", false); setTimeout(()=>window.location.href="/admin",1500); return; }
         const data = await res.json();
         if (data.success || data.product) {
             showToast(editingId ? "✅ Product updated!" : "✅ Product added!");
@@ -982,9 +826,7 @@ async function saveProduct() {
         } else {
             showToast(data.error || "Failed to save", false);
         }
-    } catch(e) {
-        showToast("Network error — try again", false);
-    }
+    } catch(e) { showToast("Network error — try again", false); }
 }
 
 /* ── DELETE PRODUCT ── */
@@ -1013,137 +855,8 @@ async function deleteProduct(id, name) {
     }
 }
 
-/* ── SITE SETTINGS ── */
-const COLOR_PRESETS = ['#2B9FD8','#7C3AED','#059669','#DC2626','#D97706','#DB2777','#0891B2','#1D4ED8'];
+/* Site Settings JS lives in admin_site_settings.html */
 
-function initSiteSettings() {
-    // Populate colour presets
-    const wrap = document.getElementById('color-presets');
-    if (wrap) {
-        COLOR_PRESETS.forEach(clr => {
-            const d = document.createElement('div');
-            d.style.cssText = `width:20px;height:20px;border-radius:50%;background:${clr};cursor:pointer;border:2px solid transparent;transition:border-color 0.15s;`;
-            d.title = clr;
-            d.onclick = () => setThemeColor(clr);
-            wrap.appendChild(d);
-        });
-    }
-
-    // Load current settings from server
-    fetch('/api/admin/site-settings', { credentials: 'include' })
-        .then(r => r.json())
-        .then(s => {
-            if (s.primary_color) {
-                document.getElementById('ss-color').value = s.primary_color;
-                document.getElementById('ss-color-hex').textContent = s.primary_color;
-            }
-            if (s.hero_font) {
-                const sel = document.getElementById('ss-font');
-                for (let opt of sel.options) {
-                    if (opt.value === s.hero_font) { opt.selected = true; break; }
-                }
-            }
-            if (s.model_path) {
-                document.getElementById('ss-model-path').value = s.model_path;
-                document.getElementById('ss-model-name').textContent = 'Current: ' + s.model_path;
-            }
-            if (s.model_scale !== undefined) {
-                document.getElementById('ss-scale').value = s.model_scale;
-                document.getElementById('ss-scale-val').textContent = parseFloat(s.model_scale).toFixed(1);
-            }
-            if (s.model_y !== undefined) {
-                document.getElementById('ss-y').value = s.model_y;
-                document.getElementById('ss-y-val').textContent = parseFloat(s.model_y).toFixed(1);
-            }
-            if (s.model_speed !== undefined) {
-                document.getElementById("ss-speed").value = s.model_speed;
-                document.getElementById("ss-speed-val").textContent = parseFloat(s.model_speed).toFixed(3);
-            }
-            // Hero text fields
-            const heroFields = {
-                "ss-eyebrow":       "hero_eyebrow",
-                "ss-headline":      "hero_headline",
-                "ss-highlight":     "hero_highlight",
-                "ss-headline2":     "hero_headline2",
-                "ss-sub":           "hero_sub",
-                "ss-cta":           "hero_cta",
-                "ss-eyebrow-color": "hero_eyebrow_color",
-                "ss-text-color":    "hero_text_color",
-                "ss-sub-color":     "hero_sub_color",
-            };
-            Object.entries(heroFields).forEach(([elId, key]) => {
-                const el = document.getElementById(elId);
-                if (el && s[key] !== undefined) el.value = s[key];
-            });
-        })
-        .catch(() => {});
-}
-
-function previewTheme(color) {
-    document.getElementById('ss-color-hex').textContent = color;
-    // Live preview — update the admin page's own primary colour
-    document.documentElement.style.setProperty('--primary-preview', color);
-}
-
-function setThemeColor(color) {
-    document.getElementById('ss-color').value = color;
-    previewTheme(color);
-}
-
-async function uploadModel(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const form = new FormData();
-    form.append('model', file);
-    showToast('Uploading model...', true);
-    try {
-        const res  = await fetch('/api/admin/upload-model', { method: 'POST', credentials: 'include', body: form });
-        if (res.redirected) { showToast('Session expired', false); return; }
-        const data = await res.json();
-        if (data.success) {
-            document.getElementById('ss-model-path').value = data.path;
-            document.getElementById('ss-model-name').textContent = 'Uploaded: ' + data.path;
-            showToast('✅ Model uploaded!');
-        } else {
-            showToast(data.error || 'Upload failed', false);
-        }
-    } catch(e) { showToast('Upload failed', false); }
-}
-
-async function saveSiteSettings() {
-    const g = id => document.getElementById(id)?.value || "";
-    const payload = {
-        primary_color:      g("ss-color"),
-        hero_font:          g("ss-font"),
-        model_path:         g("ss-model-path") || "sneaker.glb",
-        model_scale:        parseFloat(g("ss-scale")),
-        model_y:            parseFloat(g("ss-y")),
-        model_speed:        parseFloat(g("ss-speed")),
-        hero_eyebrow:       g("ss-eyebrow"),
-        hero_headline:      g("ss-headline"),
-        hero_highlight:     g("ss-highlight"),
-        hero_headline2:     g("ss-headline2"),
-        hero_sub:           g("ss-sub"),
-        hero_cta:           g("ss-cta"),
-        hero_eyebrow_color: g("ss-eyebrow-color"),
-        hero_text_color:    g("ss-text-color"),
-        hero_sub_color:     g("ss-sub-color"),
-    };
-    try {
-        const res  = await fetch('/api/admin/site-settings', {
-            method: 'POST', credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        if (res.redirected) { showToast('Session expired', false); return; }
-        const data = await res.json();
-        if (data.success) showToast('✅ Site settings saved! Refresh homepage to see changes.');
-        else showToast(data.error || 'Failed', false);
-    } catch(e) { showToast('Network error', false); }
-}
-
-// Init on load
-document.addEventListener('DOMContentLoaded', initSiteSettings);
 
 
 /* ── INVENTORY ── */
@@ -1207,57 +920,7 @@ async function setAllStock() {
     showToast(`All set to ${qty}`);
 }
 
-// Override openEditModal to also build inventory grid
-const _origOpenEditModal = openEditModal;
-function openEditModal(product) {
-    _origOpenEditModal(product);
-    // Build inventory grid after modal opens
-    setTimeout(() => buildInventoryGrid(product), 50);
-}
-
-// Override saveProduct to include stock data
-const _origSaveProduct = saveProduct;
-async function saveProduct() {
-    // Collect stock before saving
-    const stockData = collectStockData();
-
-    const name  = document.getElementById("f-name").value.trim();
-    const brand = document.getElementById("f-brand").value.trim();
-    const price = parseInt(document.getElementById("f-price").value);
-
-    if (!name || !brand || !price) {
-        showToast("Name, brand and price are required", false); return;
-    }
-
-    const payload = {
-        name, brand, price,
-        tag:    document.getElementById("f-tag").value,
-        image:  document.getElementById("f-image").value,
-        sizes:  getSelectedSizes(),
-        colors: getColorRows(),
-        stock:  stockData,
-    };
-
-    const url    = editingId ? `/api/admin/products/${editingId}` : "/api/admin/products";
-    const method = editingId ? "PUT" : "POST";
-
-    try {
-        const res  = await fetch(url, {
-            method, credentials: "include",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(payload)
-        });
-        if (res.redirected) { showToast("Session expired", false); setTimeout(() => window.location.href="/admin", 1500); return; }
-        const data = await res.json();
-        if (data.success || data.product) {
-            showToast(editingId ? "✅ Product updated!" : "✅ Product added!");
-            closeModal();
-            setTimeout(() => location.reload(), 800);
-        } else {
-            showToast(data.error || "Failed to save", false);
-        }
-    } catch(e) { showToast("Network error", false); }
-}
+// Inventory grid built via openEditModal → buildInventoryGrid call below
 
 </script>
 

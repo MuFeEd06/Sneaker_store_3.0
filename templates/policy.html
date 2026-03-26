@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Claxxic India{% endblock %}
+
+{% block content %}
+<header>
+    <div class="logo-container">
+        <a href="/" style="text-decoration:none;">
+            <h1 class="logo">Claxxic India</h1>
+        </a>
+        <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Sneaker Logo">
+    </div>
+    <input type="checkbox" id="menu-toggle" class="menu-toggle">
+    <label for="menu-toggle" class="hamburger">
+        <span></span><span></span><span></span>
+    </label>
+    <nav class="nav-menu">
+        <a href="/">Home</a>
+        <a href="/#collections">Collections</a>
+        <a href="/#shop">Shop</a>
+        <a href="#">Contact</a>
+    </nav>
+    <div class="header-search" id="header-search-wrap">
+        <input type="text" class="header-search-input" id="header-search"
+               placeholder="Search sneakers..." autocomplete="off"
+               oninput="handleHeaderSearch(this.value)"
+               onkeydown="if(event.key==='Enter')submitHeaderSearch()">
+        <button class="header-search-btn" onclick="submitHeaderSearch()">🔍</button>
+        <div class="search-dropdown" id="search-dropdown"></div>
+    </div>
+    <div class="floating-cart" onclick="window.location.href='/cart'" style="cursor:pointer">
+        🛒 <span id="cart-count">0</span>
+    </div>
+</header>
+
+<style>
+    .policy-page {
+        max-width: 760px;
+        margin: 40px auto 80px;
+        padding: 0 5%;
+    }
+    .policy-nav {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+    }
+    .policy-nav a {
+        padding: 7px 18px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1.5px solid var(--border);
+        color: var(--text-muted);
+        transition: all 0.2s;
+    }
+    .policy-nav a:hover,
+    .policy-nav a.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+    }
+    .policy-body {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 36px 40px;
+        box-shadow: var(--shadow);
+        line-height: 1.8;
+        color: var(--text);
+    }
+    .policy-body h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 20px; color: var(--primary); }
+    .policy-body h2 { font-size: 1.15rem; font-weight: 700; margin: 24px 0 10px; color: var(--text); }
+    .policy-body h3 { font-size: 1rem; font-weight: 700; margin: 18px 0 8px; }
+    .policy-body p  { margin-bottom: 14px; }
+    .policy-body ul, .policy-body ol { margin: 10px 0 14px 24px; }
+    .policy-body li { margin-bottom: 6px; }
+    @media (max-width: 600px) {
+        .policy-body { padding: 20px 16px; }
+    }
+</style>
+
+<main class="policy-page">
+    <nav class="policy-nav">
+        <a href="/privacy"  class="{{ 'active' if active == 'privacy'  else '' }}">Privacy Policy</a>
+        <a href="/refund"   class="{{ 'active' if active == 'refund'   else '' }}">Refund Policy</a>
+        <a href="/shipping" class="{{ 'active' if active == 'shipping' else '' }}">Shipping Policy</a>
+    </nav>
+    <div class="policy-body" id="policy-content">
+        {{ content | safe }}
+    </div>
+</main>
+
+<script>
+/* Convert simple markdown-like formatting to HTML */
+document.addEventListener("DOMContentLoaded", () => {
+    const el = document.getElementById("policy-content");
+    if (!el) return;
+    let html = el.innerHTML
+        .replace(/^# (.+)$/gm,   '<h1>$1</h1>')
+        .replace(/^## (.+)$/gm,  '<h2>$1</h2>')
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g,    '<em>$1</em>')
+        .replace(/^- (.+)$/gm,   '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/^(?!<[h|u|o|l])/gm, '');
+    el.innerHTML = '<p>' + html + '</p>';
+});
+</script>
+{% endblock %}
