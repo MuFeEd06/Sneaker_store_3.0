@@ -892,52 +892,76 @@ async function loadProductPage() {
    ================================================= */
 // Sizes are stored directly as "UK 8" or "EU 42" — no conversion needed
 // Just display as-is
-function getSizeLabel(size) {
-    return { primary: size, secondary: "" };
-}
-async function loadSizeUnit() { /* no-op — sizes are stored directly */ }
+/* UK → EU size map */
+const UK_TO_EU = {
+    "UK 3":"EU 36","UK 4":"EU 37","UK 5":"EU 38","UK 6":"EU 39",
+    "UK 7":"EU 41","UK 8":"EU 42","UK 9":"EU 43","UK 10":"EU 44",
+    "UK 11":"EU 45","UK 12":"EU 47","UK 13":"EU 48"
+};
 
-function renderSizeChips(shoe) {
-    const wrap   = document.getElementById("size-chips-wrap");
-    const hidden = document.getElementById("size-select");
+/* Cache size_unit so we only fetch once per page load */
+let _sizeUnit = null;
+async function getSizeUnit() {
+    if (_sizeUnit) return _sizeUnit;
+    try {
+        const res  = await fetch("/api/site-settings");
+        const data = await res.json();
+        _sizeUnit  = (data.size_unit || "both").toLowerCase();
+    } catch { _sizeUnit = "both"; }
+    return _sizeUnit;
+}
+
+/* Format a UK size string according to admin setting */
+function formatSizeLabel(ukSize, unit) {
+    const eu = UK_TO_EU[ukSize] || "";
+    if (unit === "eu")   return eu || ukSize;           // EU only
+    if (unit === "uk")   return ukSize;                 // UK only
+    return eu ? `${ukSize} / ${eu}` : ukSize;           // both (default)
+}
+
+async function renderSizeChips(shoe) {
+    const wrap    = document.getElementById("size-chips-wrap");
+    const hidden  = document.getElementById("size-select");
     const unitLbl = document.getElementById("size-unit-label");
     if (!wrap || !shoe.sizes) return;
 
-    // Update unit label — show type based on first size
-    if (unitLbl && shoe.sizes && shoe.sizes.length > 0) {
-        const first = shoe.sizes[0];
-        unitLbl.textContent = first.startsWith("EU") ? "Euro Sizes" :
-                              first.startsWith("UK") ? "UK Sizes" : "Sizes";
+    const unit  = await getSizeUnit();
+    const stock = shoe.stock || {};
+
+    // Update unit badge label
+    if (unitLbl) {
+        unitLbl.textContent = unit === "eu" ? "EU Sizes"
+                            : unit === "uk" ? "UK Sizes"
+                            : "UK / EU";
     }
 
-    const stock = shoe.stock || {};
     wrap.innerHTML = "";
 
     shoe.sizes.forEach(s => {
         const activeColor = document.querySelector(".color-swatch.active")?.title || "default";
-        const key1 = `${activeColor}|${s}`;
-        const key2 = `default|${s}`;
-        const qty  = stock[key1] !== undefined ? stock[key1]
-                   : stock[key2] !== undefined ? stock[key2]
-                   : null;
+        const qty = stock[`${activeColor}|${s}`] !== undefined ? stock[`${activeColor}|${s}`]
+                  : stock[`default|${s}`]         !== undefined ? stock[`default|${s}`]
+                  : null;
         const oos      = qty !== null && qty <= 0;
         const lowStock = qty !== null && qty > 0 && qty <= 5;
 
+        const label = formatSizeLabel(s, unit);
+
         const chip = document.createElement("div");
         chip.className    = "size-chip-btn" + (oos ? " oos" : "");
-        chip.dataset.size = s;
-        chip.title        = oos ? "Sold Out" : (lowStock ? `${qty} left` : s);
+        chip.dataset.size = s;       // always store UK internally
+        chip.title        = oos ? "Sold Out" : (lowStock ? `${qty} left` : label);
 
         chip.innerHTML = `
-            <span class="size-chip-uk">${s}</span>
-            ${lowStock ? '<span class="stock-dot"></span>' : ""}
+            <span class="size-chip-uk">${label}</span>
+            ${lowStock ? `<span class="stock-dot" title="${qty} left"></span>` : ""}
         `;
 
         if (!oos) {
             chip.addEventListener("click", () => {
                 wrap.querySelectorAll(".size-chip-btn").forEach(c => c.classList.remove("selected"));
                 chip.classList.add("selected");
-                hidden.value = s;
+                if (hidden) hidden.value = s;  // store UK value for cart
             });
         }
 
