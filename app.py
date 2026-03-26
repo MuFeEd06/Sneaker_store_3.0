@@ -187,8 +187,11 @@ DEFAULT_SITE_SETTINGS = {
     # Brand section visibility
     "hidden_brands": "",
     "show_brands_section": True,
-    # Size display unit on product page: "uk", "euro", or "both"
     "size_unit": "both",
+    # Policy pages content (markdown/HTML stored as plain text)
+    "policy_privacy":  "# Privacy Policy\n\nYour privacy is important to us. We do not share your personal data with third parties.",
+    "policy_refund":   "# Refund Policy\n\nWe accept returns within 7 days of delivery. Items must be unused and in original packaging.",
+    "policy_shipping": "# Shipping Policy\n\nWe ship across India. Standard delivery takes 3–7 business days. Free shipping on all orders.",
 }
 
 def _build_theme(hex_color):
@@ -358,6 +361,31 @@ def admin_site_settings_page():
     return render_template("admin_site_settings.html",
         site_settings=get_site_settings(),
         offer=get_offer())
+
+
+@app.route("/privacy")
+def page_privacy():
+    s = get_site_settings()
+    return render_template("policy.html",
+        title="Privacy Policy",
+        content=s.get("policy_privacy",""),
+        active="privacy")
+
+@app.route("/refund")
+def page_refund():
+    s = get_site_settings()
+    return render_template("policy.html",
+        title="Refund Policy",
+        content=s.get("policy_refund",""),
+        active="refund")
+
+@app.route("/shipping")
+def page_shipping():
+    s = get_site_settings()
+    return render_template("policy.html",
+        title="Shipping Policy",
+        content=s.get("policy_shipping",""),
+        active="shipping")
 
 @app.route("/admin/products")
 @admin_required
@@ -533,6 +561,7 @@ def api_save_site_settings():
         "tag3_icon","tag3_title","tag3_sub","tag4_icon","tag4_title","tag4_sub",
         "hidden_brands","show_brands_section",
         "size_unit",
+        "policy_privacy","policy_refund","policy_shipping",
     }
     clean = {k: v for k, v in data.items() if k in allowed_keys}
     save_site_settings(clean)
