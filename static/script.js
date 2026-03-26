@@ -890,28 +890,12 @@ async function loadProductPage() {
 /* =================================================
    SIZE CHIPS — product page
    ================================================= */
-const UK_TO_EURO = {
-    "UK 4":"EU 37","UK 5":"EU 38","UK 6":"EU 39","UK 7":"EU 41",
-    "UK 8":"EU 42","UK 9":"EU 43","UK 10":"EU 44","UK 11":"EU 45","UK 12":"EU 47"
-};
-
-// Size unit preference is loaded from /api/site-settings
-let _sizeUnit = "both"; // "uk" | "euro" | "both"
-
-async function loadSizeUnit() {
-    try {
-        const res  = await fetch("/api/site-settings");
-        const data = await res.json();
-        _sizeUnit = data.size_unit || "both";
-    } catch(e) { _sizeUnit = "both"; }
+// Sizes are stored directly as "UK 8" or "EU 42" — no conversion needed
+// Just display as-is
+function getSizeLabel(size) {
+    return { primary: size, secondary: "" };
 }
-
-function getSizeLabel(ukSize) {
-    const euro = UK_TO_EURO[ukSize] || "";
-    if (_sizeUnit === "euro" && euro) return { primary: euro, secondary: "" };
-    if (_sizeUnit === "uk")           return { primary: ukSize, secondary: "" };
-    return { primary: ukSize, secondary: euro }; // "both"
-}
+async function loadSizeUnit() { /* no-op — sizes are stored directly */ }
 
 function renderSizeChips(shoe) {
     const wrap   = document.getElementById("size-chips-wrap");
@@ -919,10 +903,11 @@ function renderSizeChips(shoe) {
     const unitLbl = document.getElementById("size-unit-label");
     if (!wrap || !shoe.sizes) return;
 
-    // Update unit label
-    if (unitLbl) {
-        const labels = { uk: "UK Sizes", euro: "EU Sizes", both: "UK / EU" };
-        unitLbl.textContent = labels[_sizeUnit] || "UK / EU";
+    // Update unit label — show type based on first size
+    if (unitLbl && shoe.sizes && shoe.sizes.length > 0) {
+        const first = shoe.sizes[0];
+        unitLbl.textContent = first.startsWith("EU") ? "Euro Sizes" :
+                              first.startsWith("UK") ? "UK Sizes" : "Sizes";
     }
 
     const stock = shoe.stock || {};
@@ -935,28 +920,24 @@ function renderSizeChips(shoe) {
         const qty  = stock[key1] !== undefined ? stock[key1]
                    : stock[key2] !== undefined ? stock[key2]
                    : null;
-        const oos  = qty !== null && qty <= 0;
+        const oos      = qty !== null && qty <= 0;
         const lowStock = qty !== null && qty > 0 && qty <= 5;
 
-        const { primary, secondary } = getSizeLabel(s);
-
         const chip = document.createElement("div");
-        chip.className  = "size-chip-btn" + (oos ? " oos" : "");
+        chip.className    = "size-chip-btn" + (oos ? " oos" : "");
         chip.dataset.size = s;
-        chip.title = oos ? "Sold Out" : (lowStock ? `${qty} left` : s);
+        chip.title        = oos ? "Sold Out" : (lowStock ? `${qty} left` : s);
 
         chip.innerHTML = `
-            <span class="size-chip-uk">${primary}</span>
-            ${secondary ? `<span class="size-chip-eu">${secondary}</span>` : ""}
+            <span class="size-chip-uk">${s}</span>
             ${lowStock ? '<span class="stock-dot"></span>' : ""}
         `;
 
         if (!oos) {
             chip.addEventListener("click", () => {
-                // Deselect all, select this
                 wrap.querySelectorAll(".size-chip-btn").forEach(c => c.classList.remove("selected"));
                 chip.classList.add("selected");
-                hidden.value = s;  // store UK value always
+                hidden.value = s;
             });
         }
 
