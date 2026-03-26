@@ -421,14 +421,12 @@ def api_public_site_settings():
     s = get_site_settings()
     # Only expose safe fields to public
     return jsonify({
-        "primary_color":  s.get("primary_color","#2B9FD8"),
-        "hero_font":      s.get("hero_font","default"),
-        "model_path":     s.get("model_path","sneaker.glb"),
-        "model_scale":    s.get("model_scale",3.0),
-        "model_y":        s.get("model_y",0.8),
-        "model_speed":    s.get("model_speed",0.006),
-        "size_unit":      s.get("size_unit","both"),
-        "hidden_brands":  s.get("hidden_brands",""),
+        "primary_color": s.get("primary_color","#2B9FD8"),
+        "hero_font":     s.get("hero_font","default"),
+        "model_path":    s.get("model_path","sneaker.glb"),
+        "model_scale":   s.get("model_scale",3.0),
+        "model_y":       s.get("model_y",0.8),
+        "model_speed":   s.get("model_speed",0.006),
     })
 
 
