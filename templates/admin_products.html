@@ -206,11 +206,19 @@
         /* Sizes */
         .sizes-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
         .size-chip {
-            padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+            padding: 6px 12px; border-radius: 10px; font-size: 0.8rem; font-weight: 600;
             border: 1.5px solid #d0e6f5; background: #f4f8fb; color: #5a6a7a;
             cursor: pointer; transition: all 0.15s; user-select: none;
+            text-align: center; min-width: 52px;
         }
         .size-chip.selected { background: #2B9FD8; color: #fff; border-color: #2B9FD8; }
+        .chip-primary { display: block; line-height: 1.2; }
+        .chip-secondary { display: block; font-size: 0.62rem; opacity: 0.6; line-height: 1; }
+        /* hide secondary label when unit = uk only */
+        body.su-uk .chip-secondary { display: none; }
+        /* show only secondary (EU) label when unit = euro */
+        body.su-euro .chip-primary { display: none; }
+        body.su-euro .chip-secondary { font-size: 0.8rem; opacity: 1; }
 
         /* Color variants */
         .colors-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
@@ -450,10 +458,35 @@
         </div>
 
         <div class="form-group full">
-            <label>Sizes</label>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+                <label style="margin:0;">Sizes Available</label>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:0.72rem;color:#9badb8;font-weight:600;">Display unit:</span>
+                    <div style="display:flex;border:1.5px solid #d0e6f5;border-radius:20px;overflow:hidden;background:#f4f8fb;">
+                        <button type="button" id="su-both-btn" onclick="setSizeUnit('both')"
+                            style="padding:4px 10px;font-size:0.72rem;font-weight:700;border:none;cursor:pointer;background:#2B9FD8;color:#fff;transition:all 0.15s;">
+                            UK/EU
+                        </button>
+                        <button type="button" id="su-uk-btn" onclick="setSizeUnit('uk')"
+                            style="padding:4px 10px;font-size:0.72rem;font-weight:700;border:none;cursor:pointer;background:transparent;color:#5a6a7a;transition:all 0.15s;">
+                            UK
+                        </button>
+                        <button type="button" id="su-euro-btn" onclick="setSizeUnit('euro')"
+                            style="padding:4px 10px;font-size:0.72rem;font-weight:700;border:none;cursor:pointer;background:transparent;color:#5a6a7a;transition:all 0.15s;">
+                            EU
+                        </button>
+                    </div>
+                    <span style="font-size:0.68rem;color:#b0c4d4;">Saves to Site Settings</span>
+                </div>
+            </div>
             <div class="sizes-wrap" id="sizes-wrap">
                 {% for s, e in [("UK 5","EU 38"),("UK 6","EU 39"),("UK 7","EU 41"),("UK 8","EU 42"),("UK 9","EU 43"),("UK 10","EU 44"),("UK 11","EU 45"),("UK 12","EU 47")] %}
-                <div class="size-chip" onclick="toggleSize(this)" data-size="{{ s }}" title="{{ s }} / {{ e }}">{{ s }}<span style="font-size:0.65rem;opacity:0.6;display:block;line-height:1;">{{ e }}</span></div>
+                <div class="size-chip" onclick="toggleSize(this)"
+                     data-size="{{ s }}" data-uk="{{ s }}" data-eu="{{ e }}"
+                     title="{{ s }} / {{ e }}">
+                    <span class="chip-primary">{{ s }}</span>
+                    <span class="chip-secondary" style="font-size:0.65rem;opacity:0.6;display:block;line-height:1;">{{ e }}</span>
+                </div>
                 {% endfor %}
             </div>
         </div>
@@ -913,6 +946,50 @@ async function setAllStock() {
 }
 
 // Inventory grid built via openEditModal → buildInventoryGrid call below
+
+
+/* ── SIZE UNIT PREFERENCE ── */
+let _adminSizeUnit = "both";
+
+async function initSizeUnit() {
+    try {
+        const res  = await fetch("/api/admin/site-settings", { credentials: "include" });
+        const data = await res.json();
+        _adminSizeUnit = data.size_unit || "both";
+        applySizeUnit(_adminSizeUnit);
+    } catch(e) { applySizeUnit("both"); }
+}
+
+function applySizeUnit(unit) {
+    _adminSizeUnit = unit;
+    // Update body class for CSS-driven chip label visibility
+    document.body.classList.remove("su-uk", "su-euro", "su-both");
+    document.body.classList.add("su-" + unit);
+    // Highlight active button
+    ["both","uk","euro"].forEach(u => {
+        const btn = document.getElementById("su-" + u + "-btn");
+        if (!btn) return;
+        btn.style.background = u === unit ? "#2B9FD8" : "transparent";
+        btn.style.color      = u === unit ? "#fff"    : "#5a6a7a";
+    });
+}
+
+async function setSizeUnit(unit) {
+    applySizeUnit(unit);
+    try {
+        await fetch("/api/admin/site-settings", {
+            method: "POST", credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ size_unit: unit })
+        });
+        showToast("✅ Size unit set to " + unit.toUpperCase());
+    } catch(e) {
+        showToast("Saved locally — sync may fail", false);
+    }
+}
+
+// Init on page load
+document.addEventListener("DOMContentLoaded", initSizeUnit);
 
 </script>
 
