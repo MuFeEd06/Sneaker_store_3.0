@@ -21,10 +21,10 @@ class Product(db.Model):
     sizes   = db.Column(db.Text, nullable=True, default="[]")
     colors  = db.Column(db.Text, nullable=True, default="[]")
     # ── INVENTORY ────────────────────────────────────────────────
-    # stock: JSON dict mapping "colorName|size" → qty, e.g.
-    #   {"default|UK 8": 5, "Black|UK 7": 3, "White|UK 9": 0}
-    # "default" used when product has no colour variants
     stock   = db.Column(db.Text, nullable=True, default="{}")
+    # ── SPECIFICATIONS ────────────────────────────────────────────
+    # Plain text, "Key: Value" per line
+    specs   = db.Column(db.Text, nullable=True, default="")
 
     def get_stock(self):
         try: return json.loads(self.stock or "{}")
@@ -37,11 +37,17 @@ class Product(db.Model):
         return sum(self.get_stock().values())
 
     def is_out_of_stock(self):
-        s = self.get_stock()
-        return len(s) > 0 and all(v <= 0 for v in s.values())
+        try:
+            s = self.get_stock()
+            return len(s) > 0 and all(v <= 0 for v in s.values())
+        except Exception:
+            return False
 
     def to_dict(self):
-        stock = self.get_stock()
+        try:
+            stock = self.get_stock()
+        except Exception:
+            stock = {}
         return {
             "id":             self.id,
             "name":           self.name,
@@ -53,7 +59,8 @@ class Product(db.Model):
             "colors":         json.loads(self.colors or "[]"),
             "stock":          stock,
             "total_stock":    sum(stock.values()) if stock else None,
-            "out_of_stock":   self.is_out_of_stock(),
+            "out_of_stock":   self.is_out_of_stock() if stock else False,
+            "specs":          self.specs or "",
         }
 
 

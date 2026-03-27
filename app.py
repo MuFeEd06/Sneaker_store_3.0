@@ -480,6 +480,12 @@ def api_add_product():
             p.stock = json.dumps(data.get("stock",{}))
     except Exception:
         pass
+    # specs field
+    try:
+        if hasattr(p, 'specs'):
+            p.specs = data.get("specs", "")
+    except Exception:
+        pass
     db.session.add(p)
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()}), 201
@@ -506,6 +512,12 @@ def api_update_product(product_id):
                 p.stock = json.dumps(data["stock"])
         except Exception as e:
             print(f"[claxxic] stock update skipped: {e}")
+    if "specs" in data:
+        try:
+            if hasattr(p, 'specs'):
+                p.specs = data.get("specs", "")
+        except Exception as e:
+            print(f"[claxxic] specs update skipped: {e}")
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()})
 

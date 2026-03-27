@@ -861,6 +861,36 @@ async function loadProductPage() {
         const descEl = document.querySelector(".description");
         if (descEl) descEl.textContent = getProductDescription(shoe);
 
+        // Show custom specifications if set
+        if (shoe.specs && shoe.specs.trim()) {
+            let specsEl = document.getElementById("product-specs");
+            if (!specsEl) {
+                specsEl = document.createElement("div");
+                specsEl.id = "product-specs";
+                specsEl.className = "product-specs";
+                descEl.insertAdjacentElement("afterend", specsEl);
+            }
+            // Parse spec lines — "Key: Value" format, one per line
+            const lines = shoe.specs.trim().split("\n").filter(l => l.trim());
+            specsEl.innerHTML = `
+                <div class="specs-header" onclick="toggleSpecs(this)">
+                    📋 Specifications <span class="specs-arrow">▾</span>
+                </div>
+                <div class="specs-body">
+                    <table class="specs-table">
+                        ${lines.map(line => {
+                            const idx = line.indexOf(":");
+                            if (idx > 0) {
+                                const key = line.slice(0, idx).trim();
+                                const val = line.slice(idx+1).trim();
+                                return `<tr><td class="spec-key">${key}</td><td class="spec-val">${val}</td></tr>`;
+                            }
+                            return `<tr><td colspan="2" class="spec-val">${line}</td></tr>`;
+                        }).join("")}
+                    </table>
+                </div>`;
+        }
+
         // Render color swatches
         renderColorSwatches(shoe);
 
@@ -895,41 +925,69 @@ async function loadProductPage() {
 function getSizeLabel(size) {
     return { primary: size, secondary: "" };
 }
-async function loadSizeUnit() { /* no-op — sizes are stored directly */ }
+let _sizeUnit = "both";
+async function loadSizeUnit() {
+    try {
+        const res  = await fetch("/api/site-settings");
+        const data = await res.json();
+        _sizeUnit  = data.size_unit || "both";
+    } catch(e) { _sizeUnit = "both"; }
+}
+
+// UK → EU mapping
+const UK_TO_EURO = {
+    "UK 4":"EU 37","UK 5":"EU 38","UK 6":"EU 39","UK 7":"EU 41",
+    "UK 8":"EU 42","UK 9":"EU 43","UK 10":"EU 44","UK 11":"EU 45","UK 12":"EU 47"
+};
+// EU → UK reverse
+const EURO_TO_UK = Object.fromEntries(Object.entries(UK_TO_EURO).map(([k,v])=>[v,k]));
+
+function getSizeDisplay(s) {
+    // s is stored as UK size always (e.g. "UK 8")
+    const euro = UK_TO_EURO[s] || "";
+    if (_sizeUnit === "euro" && euro) return { primary: euro, secondary: "" };
+    if (_sizeUnit === "uk")           return { primary: s,    secondary: "" };
+    return { primary: s, secondary: euro }; // "both"
+}
 
 function renderSizeChips(shoe) {
-    const wrap   = document.getElementById("size-chips-wrap");
-    const hidden = document.getElementById("size-select");
+    const wrap    = document.getElementById("size-chips-wrap");
+    const hidden  = document.getElementById("size-select");
     const unitLbl = document.getElementById("size-unit-label");
     if (!wrap || !shoe.sizes) return;
 
-    // Update unit label — show type based on first size
-    if (unitLbl && shoe.sizes && shoe.sizes.length > 0) {
-        const first = shoe.sizes[0];
-        unitLbl.textContent = first.startsWith("EU") ? "Euro Sizes" :
-                              first.startsWith("UK") ? "UK Sizes" : "Sizes";
+    // Update header unit label
+    if (unitLbl) {
+        const labels = { uk:"UK Sizes", euro:"EU Sizes", both:"UK / EU" };
+        unitLbl.textContent = labels[_sizeUnit] || "UK / EU";
     }
 
     const stock = shoe.stock || {};
     wrap.innerHTML = "";
 
     shoe.sizes.forEach(s => {
+        // sizes are always stored as UK values
+        const ukSize = s.startsWith("EU") ? (EURO_TO_UK[s] || s) : s;
+
         const activeColor = document.querySelector(".color-swatch.active")?.title || "default";
-        const key1 = `${activeColor}|${s}`;
-        const key2 = `default|${s}`;
+        const key1 = `${activeColor}|${ukSize}`;
+        const key2 = `default|${ukSize}`;
         const qty  = stock[key1] !== undefined ? stock[key1]
                    : stock[key2] !== undefined ? stock[key2]
                    : null;
         const oos      = qty !== null && qty <= 0;
         const lowStock = qty !== null && qty > 0 && qty <= 5;
 
+        const { primary, secondary } = getSizeDisplay(ukSize);
+
         const chip = document.createElement("div");
         chip.className    = "size-chip-btn" + (oos ? " oos" : "");
-        chip.dataset.size = s;
-        chip.title        = oos ? "Sold Out" : (lowStock ? `${qty} left` : s);
+        chip.dataset.size = ukSize;  // always store UK value in cart
+        chip.title        = oos ? "Sold Out" : (lowStock ? `${qty} left` : ukSize);
 
         chip.innerHTML = `
-            <span class="size-chip-uk">${s}</span>
+            <span class="size-chip-uk">${primary}</span>
+            ${secondary ? `<span class="size-chip-eu">${secondary}</span>` : ""}
             ${lowStock ? '<span class="stock-dot"></span>' : ""}
         `;
 
@@ -937,12 +995,21 @@ function renderSizeChips(shoe) {
             chip.addEventListener("click", () => {
                 wrap.querySelectorAll(".size-chip-btn").forEach(c => c.classList.remove("selected"));
                 chip.classList.add("selected");
-                hidden.value = s;
+                hidden.value = ukSize;  // always store UK value
             });
         }
 
         wrap.appendChild(chip);
     });
+}
+
+
+/* ── PRODUCT SPECS TOGGLE ── */
+function toggleSpecs(header) {
+    const body  = header.nextElementSibling;
+    const arrow = header.querySelector(".specs-arrow");
+    const collapsed = body.classList.toggle("collapsed");
+    arrow.style.transform = collapsed ? "rotate(-90deg)" : "rotate(0deg)";
 }
 
 /* =================================================
