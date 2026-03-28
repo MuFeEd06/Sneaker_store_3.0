@@ -888,15 +888,6 @@ async function loadProductPage() {
 
 
 /* =================================================
-   SIZE CHIPS — product page
-   ================================================= */
-// Sizes are stored directly as "UK 8" or "EU 42" — no conversion needed
-// Just display as-is
-function getSizeLabel(size) {
-    return { primary: size, secondary: "" };
-}
-
-/* =================================================
    SIZE SYSTEM
    Sizes are ALWAYS stored as UK in the database.
    Display is controlled by _sizeUnit preference.
