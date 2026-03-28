@@ -980,7 +980,7 @@ footer {
 }
 
 /* =================================================
-   PRODUCT PAGE — SIZE CHIPS (replaces select)
+   PRODUCT PAGE — SIZE CHIPS (replaces select dropdown)
    ================================================= */
 .size-section { margin: 16px 0 20px; }
 
@@ -1016,7 +1016,7 @@ footer {
     align-items: center;
     justify-content: center;
     min-width: 58px;
-    padding: 8px 10px;
+    padding: 9px 11px;
     border: 1.5px solid var(--border);
     border-radius: 10px;
     background: var(--surface-2);
@@ -1025,7 +1025,7 @@ footer {
     transition: all 0.18s;
     user-select: none;
     position: relative;
-    gap: 1px;
+    gap: 2px;
 }
 
 .size-chip-btn:hover:not(.oos):not(.selected) {
@@ -1037,31 +1037,33 @@ footer {
     background: var(--primary);
     border-color: var(--primary);
     color: #fff;
-    transform: scale(1.05);
+    transform: scale(1.06);
     box-shadow: 0 4px 14px rgba(0,0,0,0.15);
 }
 
 .size-chip-btn.oos {
-    opacity: 0.38;
+    opacity: 0.35;
     cursor: not-allowed;
-    text-decoration: line-through;
 }
 
+/* UK label — always visible unless unit=euro */
 .size-chip-uk {
     font-size: 0.85rem;
     font-weight: 700;
     line-height: 1;
 }
 
+/* EU label — smaller, below UK */
 .size-chip-eu {
-    font-size: 0.65rem;
-    opacity: 0.72;
+    font-size: 0.62rem;
+    opacity: 0.65;
     line-height: 1;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.1px;
 }
 
-.size-chip-btn.selected .size-chip-eu { opacity: 0.85; }
+.size-chip-btn.selected .size-chip-eu { opacity: 0.88; }
 
+/* Stock dot for low inventory */
 .size-chip-btn .stock-dot {
     position: absolute;
     top: 4px;
@@ -1071,6 +1073,9 @@ footer {
     border-radius: 50%;
     background: #f5a623;
 }
+
+/* Hidden input that holds the selected UK value */
+#size-select { display: none; }
 
 /* =================================================
    PRODUCT SPECIFICATIONS

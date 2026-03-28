@@ -861,36 +861,6 @@ async function loadProductPage() {
         const descEl = document.querySelector(".description");
         if (descEl) descEl.textContent = getProductDescription(shoe);
 
-        // Show custom specifications if set
-        if (shoe.specs && shoe.specs.trim()) {
-            let specsEl = document.getElementById("product-specs");
-            if (!specsEl) {
-                specsEl = document.createElement("div");
-                specsEl.id = "product-specs";
-                specsEl.className = "product-specs";
-                descEl.insertAdjacentElement("afterend", specsEl);
-            }
-            // Parse spec lines — "Key: Value" format, one per line
-            const lines = shoe.specs.trim().split("\n").filter(l => l.trim());
-            specsEl.innerHTML = `
-                <div class="specs-header" onclick="toggleSpecs(this)">
-                    📋 Specifications <span class="specs-arrow">▾</span>
-                </div>
-                <div class="specs-body">
-                    <table class="specs-table">
-                        ${lines.map(line => {
-                            const idx = line.indexOf(":");
-                            if (idx > 0) {
-                                const key = line.slice(0, idx).trim();
-                                const val = line.slice(idx+1).trim();
-                                return `<tr><td class="spec-key">${key}</td><td class="spec-val">${val}</td></tr>`;
-                            }
-                            return `<tr><td colspan="2" class="spec-val">${line}</td></tr>`;
-                        }).join("")}
-                    </table>
-                </div>`;
-        }
-
         // Render color swatches
         renderColorSwatches(shoe);
 
@@ -925,7 +895,21 @@ async function loadProductPage() {
 function getSizeLabel(size) {
     return { primary: size, secondary: "" };
 }
-let _sizeUnit = "both";
+
+/* =================================================
+   SIZE SYSTEM
+   Sizes are ALWAYS stored as UK in the database.
+   Display is controlled by _sizeUnit preference.
+================================================= */
+const UK_TO_EU = {
+    "UK 5":"EU 38", "UK 6":"EU 39", "UK 6.5":"EU 40",
+    "UK 7":"EU 41", "UK 8":"EU 42", "UK 9":"EU 43",
+    "UK 10":"EU 44","UK 11":"EU 45","UK 12":"EU 47"
+};
+const EU_TO_UK = Object.fromEntries(Object.entries(UK_TO_EU).map(([k,v])=>[v,k]));
+
+let _sizeUnit = "both";  // "uk" | "euro" | "both"
+
 async function loadSizeUnit() {
     try {
         const res  = await fetch("/api/site-settings");
@@ -934,20 +918,15 @@ async function loadSizeUnit() {
     } catch(e) { _sizeUnit = "both"; }
 }
 
-// UK → EU mapping
-const UK_TO_EURO = {
-    "UK 4":"EU 37","UK 5":"EU 38","UK 6":"EU 39","UK 7":"EU 41",
-    "UK 8":"EU 42","UK 9":"EU 43","UK 10":"EU 44","UK 11":"EU 45","UK 12":"EU 47"
-};
-// EU → UK reverse
-const EURO_TO_UK = Object.fromEntries(Object.entries(UK_TO_EURO).map(([k,v])=>[v,k]));
+function getDisplayLabel(ukSize) {
+    const eu = UK_TO_EU[ukSize] || "";
+    if (_sizeUnit === "euro" && eu) return { primary: eu,     secondary: "" };
+    if (_sizeUnit === "uk")         return { primary: ukSize, secondary: "" };
+    return { primary: ukSize, secondary: eu }; // "both"
+}
 
-function getSizeDisplay(s) {
-    // s is stored as UK size always (e.g. "UK 8")
-    const euro = UK_TO_EURO[s] || "";
-    if (_sizeUnit === "euro" && euro) return { primary: euro, secondary: "" };
-    if (_sizeUnit === "uk")           return { primary: s,    secondary: "" };
-    return { primary: s, secondary: euro }; // "both"
+function getSizeUnitHeaderLabel() {
+    return { uk: "UK Sizes", euro: "EU Sizes", both: "UK / EU" }[_sizeUnit] || "UK / EU";
 }
 
 function renderSizeChips(shoe) {
@@ -956,34 +935,31 @@ function renderSizeChips(shoe) {
     const unitLbl = document.getElementById("size-unit-label");
     if (!wrap || !shoe.sizes) return;
 
-    // Update header unit label
-    if (unitLbl) {
-        const labels = { uk:"UK Sizes", euro:"EU Sizes", both:"UK / EU" };
-        unitLbl.textContent = labels[_sizeUnit] || "UK / EU";
-    }
+    if (unitLbl) unitLbl.textContent = getSizeUnitHeaderLabel();
 
     const stock = shoe.stock || {};
     wrap.innerHTML = "";
 
-    shoe.sizes.forEach(s => {
-        // sizes are always stored as UK values
-        const ukSize = s.startsWith("EU") ? (EURO_TO_UK[s] || s) : s;
+    shoe.sizes.forEach(rawSize => {
+        // Normalise — sizes in DB are UK, but handle legacy EU values too
+        const ukSize = rawSize.startsWith("EU") ? (EU_TO_UK[rawSize] || rawSize) : rawSize;
 
         const activeColor = document.querySelector(".color-swatch.active")?.title || "default";
-        const key1 = `${activeColor}|${ukSize}`;
-        const key2 = `default|${ukSize}`;
-        const qty  = stock[key1] !== undefined ? stock[key1]
-                   : stock[key2] !== undefined ? stock[key2]
-                   : null;
+        const qty = stock[`${activeColor}|${ukSize}`] !== undefined
+                  ? stock[`${activeColor}|${ukSize}`]
+                  : stock[`default|${ukSize}`] !== undefined
+                  ? stock[`default|${ukSize}`]
+                  : null;
+
         const oos      = qty !== null && qty <= 0;
         const lowStock = qty !== null && qty > 0 && qty <= 5;
 
-        const { primary, secondary } = getSizeDisplay(ukSize);
+        const { primary, secondary } = getDisplayLabel(ukSize);
 
         const chip = document.createElement("div");
         chip.className    = "size-chip-btn" + (oos ? " oos" : "");
-        chip.dataset.size = ukSize;  // always store UK value in cart
-        chip.title        = oos ? "Sold Out" : (lowStock ? `${qty} left` : ukSize);
+        chip.dataset.size = ukSize;   // ALWAYS store UK value
+        chip.title        = oos ? "Sold Out" : (lowStock ? `${qty} left` : `${ukSize} / ${UK_TO_EU[ukSize] || ""}`);
 
         chip.innerHTML = `
             <span class="size-chip-uk">${primary}</span>
@@ -995,21 +971,11 @@ function renderSizeChips(shoe) {
             chip.addEventListener("click", () => {
                 wrap.querySelectorAll(".size-chip-btn").forEach(c => c.classList.remove("selected"));
                 chip.classList.add("selected");
-                hidden.value = ukSize;  // always store UK value
+                hidden.value = ukSize;  // always UK
             });
         }
-
         wrap.appendChild(chip);
     });
-}
-
-
-/* ── PRODUCT SPECS TOGGLE ── */
-function toggleSpecs(header) {
-    const body  = header.nextElementSibling;
-    const arrow = header.querySelector(".specs-arrow");
-    const collapsed = body.classList.toggle("collapsed");
-    arrow.style.transform = collapsed ? "rotate(-90deg)" : "rotate(0deg)";
 }
 
 /* =================================================
