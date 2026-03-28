@@ -558,10 +558,11 @@ def api_upload_image():
 def api_save_offer():
     if not USE_DB: return jsonify({"error": "No database"}), 503
     data  = request.get_json(force=True)
-    offer = {"active": bool(data.get("active", False)),
-             "text":       data.get("text","").strip(),
-             "bg_color":   data.get("bg_color","#FF6B35"),
-             "text_color": data.get("text_color","#ffffff")}
+    offer = {"active":    bool(data.get("active", False)),
+             "text":      data.get("text","").strip(),
+             "bg_color":  data.get("bg_color","#FF6B35"),
+             "text_color":data.get("text_color","#ffffff"),
+             "show_logo": bool(data.get("show_logo", False))}
     set_offer(offer)
     return jsonify({"success": True, "offer": offer})
 

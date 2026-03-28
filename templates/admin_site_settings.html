@@ -447,8 +447,10 @@ async function loadSettings() {
             setVal('offer-text', s.offer.text);
             setVal('offer-bg',   s.offer.bg_color);
             setVal('offer-fg',   s.offer.text_color);
-            document.getElementById('offer-active').checked = !!s.offer.active;
+            document.getElementById('offer-active').checked    = !!s.offer.active;
             document.getElementById('offer-toggle-label').textContent = s.offer.active ? 'ON' : 'OFF';
+            const logoChk = document.getElementById('offer-show-logo');
+            if (logoChk) logoChk.checked = !!s.offer.show_logo;
         }
 
         // Brand visibility
