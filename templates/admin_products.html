@@ -500,6 +500,19 @@
             <button type="button" class="add-color-btn" onclick="addColorRow()">+ Add Color Variant</button>
         </div>
 
+        <!-- SPECIFICATIONS -->
+        <div class="form-group full">
+            <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                <span>📋 Product Specifications</span>
+                <span style="font-size:0.72rem;color:#9badb8;font-weight:400;">One "Key: Value" per line · e.g. "Material: Leather"</span>
+            </label>
+            <textarea id="f-specs" rows="5"
+                placeholder="Material: Full-grain leather&#10;Sole: Rubber&#10;Closure: Lace-up&#10;Weight: 320g"
+                style="width:100%;padding:10px 13px;border:1.5px solid #d0e6f5;border-radius:8px;font-size:0.85rem;outline:none;background:#f4f8fb;color:#1a1a2e;font-family:inherit;resize:vertical;line-height:1.6;transition:border-color 0.2s;"
+                onfocus="this.style.borderColor='#2B9FD8';this.style.background='#fff'"
+                onblur="this.style.borderColor='#d0e6f5';this.style.background='#f4f8fb'"></textarea>
+        </div>
+
         <!-- INVENTORY -->
         <div class="form-group full" id="inventory-section">
             <label style="display:flex;align-items:center;gap:8px;">
@@ -636,6 +649,7 @@ function openEditModal(product) {
     document.getElementById("f-tag").value   = product.tag || "";
     document.getElementById("f-image").value = product.image || "";
 
+    const _specsEl = document.getElementById("f-specs"); if(_specsEl) _specsEl.value = product.specs || "";
     const pathEl = document.getElementById("f-image-path");
     if (product.image) {
         pathEl.textContent = product.image;
@@ -678,6 +692,7 @@ function resetForm() {
     document.getElementById("f-image-preview").style.display = "none";
     document.querySelectorAll(".size-chip").forEach(c => c.classList.remove("selected"));
     document.getElementById("colors-list").innerHTML = "";
+    const _sp=document.getElementById("f-specs"); if(_sp) _sp.value="";
     currentBrand = "";
 }
 
@@ -829,6 +844,7 @@ async function saveProduct() {
         sizes:  getSelectedSizes(),
         colors: getColorRows(),
         stock:  stockData,
+        specs:  document.getElementById("f-specs")?.value || "",
     };
 
     const url    = editingId ? `/api/admin/products/${editingId}` : "/api/admin/products";
