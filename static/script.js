@@ -861,33 +861,6 @@ async function loadProductPage() {
         const descEl = document.querySelector(".description");
         if (descEl) descEl.textContent = getProductDescription(shoe);
 
-        // Render specs if available
-        const existingSpecs = document.getElementById("product-specs-block");
-        if (existingSpecs) existingSpecs.remove();
-        if (shoe.specs && shoe.specs.trim()) {
-            const specsBlock = document.createElement("div");
-            specsBlock.id = "product-specs-block";
-            specsBlock.className = "product-specs";
-            const lines = shoe.specs.trim().split("\n").filter(l => l.trim());
-            specsBlock.innerHTML = `
-                <div class="specs-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.specs-arrow').style.transform=this.nextElementSibling.classList.contains('collapsed')?'rotate(-90deg)':'rotate(0)'">
-                    📋 Specifications <span class="specs-arrow" style="transition:transform 0.25s;display:inline-block;">▾</span>
-                </div>
-                <div class="specs-body">
-                    <table class="specs-table">
-                        ${lines.map(line=>{
-                            const idx=line.indexOf(":");
-                            if(idx>0){const k=line.slice(0,idx).trim();const v=line.slice(idx+1).trim();
-                            return \`<tr><td class="spec-key">\${k}</td><td class="spec-val">\${v}</td></tr>\`;}
-                            return \`<tr><td colspan="2" class="spec-val">\${line}</td></tr>\`;
-                        }).join("")}
-                    </table>
-                </div>`;
-            if (descEl && descEl.parentNode) {
-                descEl.insertAdjacentElement("afterend", specsBlock);
-            }
-        }
-
         // Render color swatches
         renderColorSwatches(shoe);
 
