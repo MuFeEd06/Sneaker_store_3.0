@@ -842,6 +842,36 @@ async function loadProductPage() {
         const descEl = document.querySelector(".description");
         if (descEl) descEl.textContent = getProductDescription(shoe);
 
+        // ── Render specifications ──────────────────────────────────────────
+        const existingSpecs = document.getElementById("product-specs-block");
+        if (existingSpecs) existingSpecs.remove();
+        if (shoe.specs && shoe.specs.trim()) {
+            const lines = shoe.specs.trim().split("\n").filter(l => l.trim());
+            const rows  = lines.map(line => {
+                const idx = line.indexOf(":");
+                if (idx > 0) {
+                    const k = line.slice(0, idx).trim();
+                    const v = line.slice(idx + 1).trim();
+                    return `<tr><td class="spec-key">${k}</td><td class="spec-val">${v}</td></tr>`;
+                }
+                return `<tr><td colspan="2" class="spec-val">${line}</td></tr>`;
+            }).join("");
+
+            const specsBlock = document.createElement("div");
+            specsBlock.id        = "product-specs-block";
+            specsBlock.className = "product-specs";
+            specsBlock.innerHTML = `
+                <div class="specs-header" onclick="toggleSpecs(this)">
+                    📋 Specifications <span class="specs-arrow" style="display:inline-block;transition:transform 0.25s;float:right;">▾</span>
+                </div>
+                <div class="specs-body">
+                    <table class="specs-table">${rows}</table>
+                </div>`;
+            if (descEl && descEl.parentNode) {
+                descEl.insertAdjacentElement("afterend", specsBlock);
+            }
+        }
+
         // Render color swatches
         renderColorSwatches(shoe);
 
