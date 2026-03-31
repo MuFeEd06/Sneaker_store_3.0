@@ -139,10 +139,10 @@
 <header class="admin-header">
     <div class="admin-brand">Claxxic India</div>
     <div class="header-nav">
-        <a href="/admin/dashboard" class="nav-btn">📦 Orders</a>
-        <a href="/admin/products" class="nav-btn">👟 Products</a>
-        <a href="/admin/site-settings" class="nav-btn active">🎨 Site Settings</a>
-        <a href="/admin/logout" class="nav-btn danger">Sign Out</a>
+        <a href="/manage-store-x9k2/dashboard" class="nav-btn">📦 Orders</a>
+        <a href="/manage-store-x9k2/products" class="nav-btn">👟 Products</a>
+        <a href="/manage-store-x9k2/site-settings" class="nav-btn active">🎨 Site Settings</a>
+        <a href="/manage-store-x9k2/logout" class="nav-btn danger">Sign Out</a>
     </div>
 </header>
 
@@ -238,12 +238,6 @@
             <div class="form-group full"><label>Ribbon Text</label><input type="text" id="offer-text" placeholder="🔥 Flat 20% OFF this weekend!"></div>
             <div class="form-group"><label>Background Colour</label><div class="color-row"><input type="color" id="offer-bg" value="#FF6B35"></div></div>
             <div class="form-group"><label>Text Colour</label><div class="color-row"><input type="color" id="offer-fg" value="#ffffff"></div></div>
-            <div class="form-group"><label>Show Logo</label>
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:4px;">
-                    <input type="checkbox" id="offer-show-logo" style="width:18px;height:18px;accent-color:#2B9FD8;">
-                    <span style="font-size:0.85rem;color:#5a6a7a;">Show logo.png in ribbon</span>
-                </label>
-            </div>
             <div class="form-group"><label>Active</label>
                 <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:4px;">
                     <input type="checkbox" id="offer-active" style="width:18px;height:18px;accent-color:#2B9FD8;">
@@ -410,8 +404,8 @@ function showToast(msg, ok=true) {
 /* ── SINGLE loadSettings — no chaining ── */
 async function loadSettings() {
     try {
-        const res = await fetch('/api/admin/site-settings', { credentials: 'include' });
-        if (res.redirected) { window.location.href = '/admin'; return; }
+        const res = await fetch('/api/x9k2/site-settings', { credentials: 'include' });
+        if (res.redirected) { window.location.href = '/manage-store-x9k2'; return; }
         const s = await res.json();
 
         // Theme
@@ -484,7 +478,7 @@ document.getElementById('offer-active').addEventListener('change', function() {
 /* ── Save sections ── */
 async function apiSave(payload, successMsg) {
     try {
-        const res  = await fetch('/api/admin/site-settings', {
+        const res  = await fetch('/api/x9k2/site-settings', {
             method:'POST', credentials:'include',
             headers:{'Content-Type':'application/json'},
             body: JSON.stringify(payload)
@@ -542,7 +536,7 @@ async function saveSection(section) {
 
 async function saveOffer() {
     try {
-        const res  = await fetch('/api/admin/offer', {
+        const res  = await fetch('/api/x9k2/offer', {
             method:'POST', credentials:'include',
             headers:{'Content-Type':'application/json'},
             body: JSON.stringify({
@@ -550,7 +544,6 @@ async function saveOffer() {
                 text:       g('offer-text'),
                 bg_color:   g('offer-bg'),
                 text_color: g('offer-fg'),
-                show_logo:  document.getElementById('offer-show-logo')?.checked || false,
             })
         });
         if (res.redirected) { showToast('Session expired', false); return; }
@@ -567,7 +560,7 @@ async function uploadModel(input) {
     form.append('model', file);
     showToast('Uploading model...');
     try {
-        const res  = await fetch('/api/admin/upload-model', { method:'POST', credentials:'include', body:form });
+        const res  = await fetch('/api/x9k2/upload-model', { method:'POST', credentials:'include', body:form });
         if (res.redirected) { showToast('Session expired', false); return; }
         const data = await res.json();
         if (data.success) {
