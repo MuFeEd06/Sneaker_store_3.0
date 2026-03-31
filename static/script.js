@@ -919,25 +919,24 @@ const UK_TO_EU = {
 };
 const EU_TO_UK = Object.fromEntries(Object.entries(UK_TO_EU).map(([k,v])=>[v,k]));
 
-let _sizeUnit = "both";  // "uk" | "euro" | "both"
+let _sizeUnit = "uk";  // "uk" | "euro" — no both option
 
 async function loadSizeUnit() {
     try {
         const res  = await fetch("/api/site-settings");
         const data = await res.json();
-        _sizeUnit  = data.size_unit || "both";
+        _sizeUnit  = (data.size_unit === "euro") ? "euro" : "uk";
     } catch(e) { _sizeUnit = "both"; }
 }
 
 function getDisplayLabel(ukSize) {
     const eu = UK_TO_EU[ukSize] || "";
     if (_sizeUnit === "euro" && eu) return { primary: eu,     secondary: "" };
-    if (_sizeUnit === "uk")         return { primary: ukSize, secondary: "" };
-    return { primary: ukSize, secondary: eu }; // "both"
+    return { primary: ukSize, secondary: "" };  // "uk" — no secondary label
 }
 
 function getSizeUnitHeaderLabel() {
-    return { uk: "UK Sizes", euro: "EU Sizes", both: "UK / EU" }[_sizeUnit] || "UK / EU";
+    return _sizeUnit === "euro" ? "EU Sizes" : "UK Sizes";
 }
 
 function renderSizeChips(shoe) {
