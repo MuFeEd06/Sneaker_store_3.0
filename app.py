@@ -1,5 +1,5 @@
 """
-Claxxic India — Flask Backend (Vercel + Supabase Edition)
+CALVAC — Flask Backend (Vercel + Supabase Edition)
 Key fix: DB init is lazy (before_request) not at import time — required for Vercel serverless
 """
 
@@ -58,7 +58,7 @@ _secret = os.environ.get("SECRET_KEY", "")
 if not _secret or _secret == "claxxic-secret-2026":
     import secrets as _sec
     _secret = _sec.token_hex(32)  # random per cold start — sessions won't survive restarts
-    print("[claxxic] ⚠️  SECRET_KEY not set — using random key. Set SECRET_KEY env var in Vercel!")
+    print("[calvac] ⚠️  SECRET_KEY not set — using random key. Set SECRET_KEY env var in Vercel!")
 app.config["SECRET_KEY"] = _secret
 app.config["SESSION_COOKIE_SECURE"]          = True
 app.config["SESSION_COOKIE_HTTPONLY"]        = True
@@ -147,9 +147,9 @@ def ensure_db():
     _db_ready = True
     try:
         db.create_all()
-        print("[claxxic] ✅ DB tables ready")
+        print("[calvac] ✅ DB tables ready")
     except Exception as e:
-        print(f"[claxxic] ❌ DB init failed: {e}")
+        print(f"[calvac] ❌ DB init failed: {e}")
         USE_DB = False
 
 
@@ -285,7 +285,7 @@ def get_site_settings():
                 if v is not None:
                     defaults[k] = v
     except Exception as e:
-        print(f"[claxxic] get_site_settings parse error: {e}")
+        print(f"[calvac] get_site_settings parse error: {e}")
     defaults["offer"] = get_offer()
     defaults["theme"] = _build_theme(defaults.get("primary_color","#2B9FD8"))
     return defaults
@@ -609,20 +609,20 @@ def api_update_product(product_id):
             elif hasattr(p, 'stock'):
                 p.stock = json.dumps(data["stock"])
         except Exception as e:
-            print(f"[claxxic] stock update skipped: {e}")
+            print(f"[calvac] stock update skipped: {e}")
     if "specs" in data:
         try:
             if hasattr(p, 'specs'):
                 p.specs = data.get("specs", "")
         except Exception as e:
-            print(f"[claxxic] specs update skipped: {e}")
+            print(f"[calvac] specs update skipped: {e}")
     if "original_price" in data:
         try:
             if hasattr(p, 'original_price'):
                 op = int(data.get("original_price") or 0)
                 p.original_price = op if op > 0 else 0
         except Exception as e:
-            print(f"[claxxic] original_price update skipped: {e}")
+            print(f"[calvac] original_price update skipped: {e}")
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()})
 
@@ -662,7 +662,7 @@ def api_upload_image():
         public_url = _supabase_upload(file_bytes, content_type, storage_path)
         return jsonify({"success": True, "path": public_url, "url": public_url})
     except Exception as e:
-        print(f"[claxxic] Upload error: {e}")
+        print(f"[calvac] Upload error: {e}")
         return jsonify({"error": f"Upload failed: {str(e)}"}), 500
 
 @app.route("/api/x9k2/offer", methods=["POST"])
@@ -720,7 +720,7 @@ def api_upload_model():
         public_url = _supabase_upload(file_bytes, "model/gltf-binary", storage_path)
         return jsonify({"success": True, "path": public_url, "url": public_url})
     except Exception as e:
-        print(f"[claxxic] Model upload error: {e}")
+        print(f"[calvac] Model upload error: {e}")
         return jsonify({"error": f"Upload failed: {str(e)}"}), 500
 
 
@@ -771,7 +771,7 @@ def _adjust_stock(order, delta):
                 product.set_stock(stock)
         db.session.commit()
     except Exception as e:
-        print(f"[claxxic] Stock adjust error: {e}")
+        print(f"[calvac] Stock adjust error: {e}")
 
 @app.route("/api/orders/<int:order_id>/status", methods=["PATCH"])
 @admin_required
