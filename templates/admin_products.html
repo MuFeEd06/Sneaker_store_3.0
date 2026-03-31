@@ -311,10 +311,10 @@
 <header class="admin-header">
     <div class="admin-brand">Claxxic India</div>
     <div class="header-nav">
-        <a href="/manage-store-x9k2/dashboard" class="nav-btn">📦 Orders</a>
-        <a href="/manage-store-x9k2/site-settings" class="nav-btn">🎨 Site Settings</a>
+        <a href="/admin/dashboard" class="nav-btn">📦 Orders</a>
+        <a href="/admin/site-settings" class="nav-btn">🎨 Site Settings</a>
         <button class="nav-btn primary" onclick="openAddModal()">+ Add Product</button>
-        <a href="/manage-store-x9k2/logout" class="nav-btn danger">Sign Out</a>
+        <a href="/admin/logout" class="nav-btn danger">Sign Out</a>
     </div>
 </header>
 
@@ -382,7 +382,15 @@
             <div class="card-body">
                 <div class="card-brand">{{ p.brand }}</div>
                 <div class="card-name">{{ p.name }}</div>
-                <div class="card-price">₹{{ "{:,}".format(p.price) }}</div>
+                <div class="card-price">
+                    ₹{{ "{:,}".format(p.price) }}
+                    {% if p.original_price and p.original_price > p.price %}
+                    <span style="font-size:0.72rem;color:#9badb8;text-decoration:line-through;margin-left:6px;font-weight:400;">₹{{ "{:,}".format(p.original_price) }}</span>
+                    <span style="font-size:0.68rem;background:#fff0e0;color:#c05c00;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">
+                        {{ ((p.original_price - p.price) / p.original_price * 100) | int }}% OFF
+                    </span>
+                    {% endif %}
+                </div>
                 {% if p.colors %}
                 <div class="card-colors">
                     {% for c in p.colors[:6] %}
@@ -429,8 +437,17 @@
         </div>
 
         <div class="form-group">
-            <label>Base Price (₹) *</label>
-            <input type="number" id="f-price" placeholder="18500" min="0">
+            <label>Sale Price (₹) * <span style="color:#9badb8;font-weight:400;font-size:0.72rem;">— actual selling price</span></label>
+            <input type="number" id="f-price" placeholder="4999" min="0">
+        </div>
+
+        <div class="form-group">
+            <label>Original MRP (₹) <span style="color:#9badb8;font-weight:400;font-size:0.72rem;">— crossed-out price (optional)</span></label>
+            <input type="number" id="f-original-price" placeholder="e.g. 8999 — leave blank for no offer"
+                   min="0" style="border-color:#fed7d7;"
+                   onfocus="this.style.borderColor='#2B9FD8';this.style.background='#fff'"
+                   onblur="this.style.borderColor=this.value?'#f5a623':'#d0e6f5';this.style.background='#f4f8fb'">
+            <small style="color:#9badb8;">Must be higher than sale price. Shows as ₹<s>MRP</s> with % off badge.</small>
         </div>
 
         <div class="form-group">
@@ -598,7 +615,7 @@ async function saveOffer() {
         text_color: document.getElementById("offer-fg").value,
     };
     try {
-        const res  = await fetch("/api/x9k2/offer", {
+        const res  = await fetch("/api/admin/offer", {
             method: "POST",
             credentials: "include",   /* ← FIXES session cookie not being sent */
             headers: {"Content-Type": "application/json"},
@@ -606,7 +623,7 @@ async function saveOffer() {
         });
         if (res.redirected) {
             showToast("Session expired — please log in again", false);
-            setTimeout(() => window.location.href = "/manage-store-x9k2", 1500);
+            setTimeout(() => window.location.href = "/admin", 1500);
             return;
         }
         const data = await res.json();
@@ -703,14 +720,14 @@ async function uploadMainImage(input) {
 
     showToast("Uploading...", true);
     try {
-        const res  = await fetch("/api/x9k2/upload-image", {
+        const res  = await fetch("/api/admin/upload-image", {
             method: "POST",
             credentials: "include",   /* ← FIXES session cookie */
             body: form
         });
         if (res.redirected) {
             showToast("Session expired — please log in again", false);
-            setTimeout(() => window.location.href = "/manage-store-x9k2", 1500);
+            setTimeout(() => window.location.href = "/admin", 1500);
             return;
         }
         const data = await res.json();
@@ -771,7 +788,7 @@ async function uploadColorImage(input, rowId) {
     form.append("brand", brand);
 
     try {
-        const res  = await fetch("/api/x9k2/upload-image", {
+        const res  = await fetch("/api/admin/upload-image", {
             method: "POST",
             credentials: "include",   /* ← FIXES session cookie */
             body: form
@@ -824,14 +841,16 @@ async function saveProduct() {
 
     const payload = {
         name, brand, price,
-        tag:    document.getElementById("f-tag").value,
-        image:  document.getElementById("f-image").value,
-        sizes:  getSelectedSizes(),
-        colors: getColorRows(),
-        stock:  stockData,
+        tag:            document.getElementById("f-tag").value,
+        image:          document.getElementById("f-image").value,
+        sizes:          getSelectedSizes(),
+        colors:         getColorRows(),
+        stock:          stockData,
+        specs:          document.getElementById("f-specs")?.value || "",
+        original_price: parseInt(document.getElementById("f-original-price")?.value) || 0,
     };
 
-    const url    = editingId ? `/api/admin/products/${editingId}` : "/api/x9k2/products";
+    const url    = editingId ? `/api/x9k2/products/${editingId}` : "/api/x9k2/products";
     const method = editingId ? "PUT" : "POST";
 
     try {
@@ -843,7 +862,7 @@ async function saveProduct() {
         });
         if (res.redirected) {
             showToast("Session expired — please log in again", false);
-            setTimeout(() => window.location.href = "/manage-store-x9k2", 1500);
+            setTimeout(() => window.location.href = "/admin", 1500);
             return;
         }
         const data = await res.json();
@@ -864,13 +883,13 @@ async function deleteProduct(id, name) {
     if (!confirm(`Delete "${name}"?\n\nThis cannot be undone.`)) return;
 
     try {
-        const res  = await fetch(`/api/admin/products/${id}`, {
+        const res  = await fetch(`/api/x9k2/products/${id}`, {
             method: "DELETE",
             credentials: "include"    /* ← FIXES session cookie */
         });
         if (res.redirected) {
             showToast("Session expired — please log in again", false);
-            setTimeout(() => window.location.href = "/manage-store-x9k2", 1500);
+            setTimeout(() => window.location.href = "/admin", 1500);
             return;
         }
         const data = await res.json();
@@ -973,7 +992,7 @@ let _adminSizeUnit = "both";
 
 async function initSizeUnit() {
     try {
-        const res  = await fetch("/api/x9k2/site-settings", { credentials: "include" });
+        const res  = await fetch("/api/admin/site-settings", { credentials: "include" });
         const data = await res.json();
         _adminSizeUnit = data.size_unit || "both";
         applySizeUnit(_adminSizeUnit);
@@ -997,7 +1016,7 @@ function applySizeUnit(unit) {
 async function setSizeUnit(unit) {
     applySizeUnit(unit);
     try {
-        await fetch("/api/x9k2/site-settings", {
+        await fetch("/api/admin/site-settings", {
             method: "POST", credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ size_unit: unit })

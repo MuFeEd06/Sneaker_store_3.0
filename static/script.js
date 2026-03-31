@@ -573,35 +573,16 @@ function buildStars(score, size = "sm") {
    Returns null if no deal, or { dealPrice, origPrice, pct, label }
 ================================================= */
 function getDeal(shoe) {
-    // ~40% of products get a deal, seeded by id so same product = same deal always
-    const seed1 = (shoe.id * 3571 + 12345) % 10;
-    if (seed1 >= 4) return null;  // 60% no deal
-
+    // Use admin-set original_price (MRP) if available
+    const mrp  = shoe.original_price || 0;
     const orig = shoe.price;
 
-    // MRP is always higher than actual price, but hard capped at 5500
-    // If product already costs >= 5500, skip deal (nothing to show above it meaningfully)
-    if (orig >= 5500) return null;
-
-    const maxMrp = 5500;
-    const minMrp = orig + 200;  // at least ₹200 above actual price
-
-    if (minMrp > maxMrp) return null; // price too close to cap
-
-    const seed2  = (shoe.id * 7919 + 54321) % 233280;
-    const range  = maxMrp - minMrp;
-    // Round MRP to nearest 100 for clean look
-    const mrp    = Math.round((minMrp + Math.floor((seed2 / 233280) * range)) / 100) * 100;
-
-    // Calculate % off
-    const saved  = mrp - orig;
-    const pct    = Math.round((saved / mrp) * 100);
-
-    // Label variety
-    const labels = ["Limited Deal", "Flash Sale", "Today Only", "Hot Deal", "Special Price"];
-    const label  = labels[(shoe.id * 13) % labels.length];
-
-    return { dealPrice: orig, origPrice: mrp, pct, label };
+    if (mrp > orig && mrp > 0) {
+        const saved = mrp - orig;
+        const pct   = Math.round((saved / mrp) * 100);
+        return { dealPrice: orig, origPrice: mrp, pct, label: "Special Price" };
+    }
+    return null;  // no deal — admin didn't set an MRP
 }
 
 function formatDeal(deal) {
@@ -886,6 +867,15 @@ async function loadProductPage() {
     }
 }
 
+
+/* =================================================
+   SIZE CHIPS — product page
+   ================================================= */
+// Sizes are stored directly as "UK 8" or "EU 42" — no conversion needed
+// Just display as-is
+function getSizeLabel(size) {
+    return { primary: size, secondary: "" };
+}
 
 /* =================================================
    SIZE SYSTEM

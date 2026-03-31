@@ -577,6 +577,13 @@ def api_add_product():
             p.specs = data.get("specs", "")
     except Exception:
         pass
+    # original_price (MRP / strikethrough price)
+    try:
+        if hasattr(p, 'original_price'):
+            op = int(data.get("original_price") or 0)
+            p.original_price = op if op > 0 else 0
+    except Exception:
+        pass
     db.session.add(p)
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()}), 201
@@ -609,6 +616,13 @@ def api_update_product(product_id):
                 p.specs = data.get("specs", "")
         except Exception as e:
             print(f"[claxxic] specs update skipped: {e}")
+    if "original_price" in data:
+        try:
+            if hasattr(p, 'original_price'):
+                op = int(data.get("original_price") or 0)
+                p.original_price = op if op > 0 else 0
+        except Exception as e:
+            print(f"[claxxic] original_price update skipped: {e}")
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()})
 
