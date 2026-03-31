@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Your Cart — Claxxic India{% endblock %}
+{% block title %}Your Cart — CALVAC{% endblock %}
 
 {% block head %}
 <style>
@@ -557,7 +557,7 @@
 {% block content %}
 <header>
         <div class="logo-container">
-            <h1 class="logo">Claxxic India</h1>
+            <h1 class="logo">CALVAC</h1>
             <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Logo">
         </div>
 
@@ -572,17 +572,6 @@
             <a href="/#shop">Shop</a>
             <a href="#">Contact</a>
         </nav>
-
-        <!-- Global Search -->
-        <div class="header-search" id="header-search-wrap">
-            <input type="text" class="header-search-input" id="header-search"
-                   placeholder="Search sneakers..."
-                   autocomplete="off"
-                   oninput="handleHeaderSearch(this.value)"
-                   onkeydown="if(event.key==='Enter')submitHeaderSearch()">
-            <button class="header-search-btn" onclick="submitHeaderSearch()">🔍</button>
-            <div class="search-dropdown" id="search-dropdown"></div>
-        </div>
 
         <div class="floating-cart" onclick="window.location.href='/cart'" style="cursor:pointer">
             🛒 <span id="cart-count">0</span>

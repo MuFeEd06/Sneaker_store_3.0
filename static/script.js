@@ -35,11 +35,11 @@ function getBrandConfig(name) {
 const WHATSAPP_NUMBER = "919645087584"; // ← change to your number
 
 function getCart() {
-    return JSON.parse(localStorage.getItem("claxxic_cart") || "[]");
+    return JSON.parse(localStorage.getItem("calvac_cart") || "[]");
 }
 
 function saveCart(cart) {
-    localStorage.setItem("claxxic_cart", JSON.stringify(cart));
+    localStorage.setItem("calvac_cart", JSON.stringify(cart));
     updateCartBadge();
 }
 
@@ -254,7 +254,7 @@ function updateSummary(cart) {
             if (noteEl) noteEl.style.display = "none";
 
             // Rich WhatsApp message with color + image + address
-            let msg = "🛒 *New Order — Claxxic India*\n\n";
+            let msg = "🛒 *New Order — CALVAC*\n\n";
             msg += "👟 *Items Ordered:*\n";
             cart.forEach((item, i) => {
                 msg += `\n${i + 1}. *${item.name}*\n`;
@@ -657,7 +657,7 @@ async function renderBrandPage() {
     const searchQ   = params.get("q") || "";   // from global search
     const brandCfg  = getBrandConfig(brandName);
 
-    document.title = `${brandName} — Claxxic India`;
+    document.title = `${brandName} — CALVAC`;
 
     // Show logo in hero
     if (monogramEl) {
@@ -702,7 +702,7 @@ async function renderBrandPage() {
                 monogramEl.style.border = "1px solid rgba(43,159,216,0.3)";
                 monogramEl.innerHTML = `<span style="font-size:2rem;">🔍</span>`;
             }
-            document.title = `${searchQ} — Claxxic India`;
+            document.title = `${searchQ} — CALVAC`;
         } else {
             // Brand page mode — fuzzy match brand name
             const qb = norm(brandName);
@@ -827,7 +827,7 @@ async function loadProductPage() {
         imgEl.onerror     = () => imgEl.src = "https://placehold.co/400x300/eaf3fa/2B9FD8?text=No+Image";
 
         // Update page title
-        document.title = `${shoe.name} — Claxxic India`;
+        document.title = `${shoe.name} — CALVAC`;
 
         // Inject rating
         const { score, count } = getRating(shoe.id);

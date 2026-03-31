@@ -642,11 +642,18 @@ def api_upload_image():
     if "image" not in request.files: return jsonify({"error": "No file"}), 400
     file  = request.files["image"]
     brand = request.form.get("brand", "misc")
-    if not file or not allowed_file(file.filename):
+    if not file or not file.filename:
+        return jsonify({"error": "No file provided"}), 400
+    if not allowed_file(file.filename):
         return jsonify({"error": "Invalid file type. Use JPG, PNG or WEBP"}), 400
 
     brand_slug    = slugify(brand)
     filename      = secure_filename(file.filename)
+    # Add timestamp prefix to avoid filename collisions
+    import time as _t
+    ts = int(_t.time())
+    name_parts = filename.rsplit(".", 1)
+    filename   = f"{name_parts[0]}_{ts}.{name_parts[1]}" if len(name_parts) == 2 else f"{filename}_{ts}"
     storage_path  = f"shoes/{brand_slug}/{filename}"
     file_bytes    = file.read()
     content_type  = file.content_type or "image/jpeg"
