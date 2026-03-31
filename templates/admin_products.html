@@ -311,10 +311,10 @@
 <header class="admin-header">
     <div class="admin-brand">CALVAC</div>
     <div class="header-nav">
-        <a href="/admin/dashboard" class="nav-btn">📦 Orders</a>
-        <a href="/admin/site-settings" class="nav-btn">🎨 Site Settings</a>
+        <a href="/manage-store-x9k2/dashboard" class="nav-btn">📦 Orders</a>
+        <a href="/manage-store-x9k2/site-settings" class="nav-btn">🎨 Site Settings</a>
         <button class="nav-btn primary" onclick="openAddModal()">+ Add Product</button>
-        <a href="/admin/logout" class="nav-btn danger">Sign Out</a>
+        <a href="/manage-store-x9k2/logout" class="nav-btn danger">Sign Out</a>
     </div>
 </header>
 
@@ -356,7 +356,7 @@
         </div>
     </div>
 
-    <!-- Site Settings moved to /admin/site-settings page -->
+    <!-- Site Settings at /manage-store-x9k2/site-settings -->
 
     <!-- PRODUCT TOOLBAR -->
     <div class="toolbar">
@@ -615,7 +615,7 @@ async function saveOffer() {
         text_color: document.getElementById("offer-fg").value,
     };
     try {
-        const res  = await fetch("/api/admin/offer", {
+        const res  = await fetch("/api/x9k2/offer", {
             method: "POST",
             credentials: "include",   /* ← FIXES session cookie not being sent */
             headers: {"Content-Type": "application/json"},
@@ -623,7 +623,7 @@ async function saveOffer() {
         });
         if (res.redirected) {
             showToast("Session expired — please log in again", false);
-            setTimeout(() => window.location.href = "/admin", 1500);
+            setTimeout(() => window.location.href = "/manage-store-x9k2", 1500);
             return;
         }
         const data = await res.json();
@@ -727,7 +727,7 @@ async function uploadMainImage(input) {
         });
         if (res.redirected) {
             showToast("Session expired — please log in again", false);
-            setTimeout(() => window.location.href = "/admin", 1500);
+            setTimeout(() => window.location.href = "/manage-store-x9k2", 1500);
             return;
         }
         const data = await res.json();
@@ -862,7 +862,7 @@ async function saveProduct() {
         });
         if (res.redirected) {
             showToast("Session expired — please log in again", false);
-            setTimeout(() => window.location.href = "/admin", 1500);
+            setTimeout(() => window.location.href = "/manage-store-x9k2", 1500);
             return;
         }
         const data = await res.json();
@@ -889,7 +889,7 @@ async function deleteProduct(id, name) {
         });
         if (res.redirected) {
             showToast("Session expired — please log in again", false);
-            setTimeout(() => window.location.href = "/admin", 1500);
+            setTimeout(() => window.location.href = "/manage-store-x9k2", 1500);
             return;
         }
         const data = await res.json();
@@ -992,7 +992,7 @@ let _adminSizeUnit = "both";
 
 async function initSizeUnit() {
     try {
-        const res  = await fetch("/api/admin/site-settings", { credentials: "include" });
+        const res  = await fetch("/api/x9k2/site-settings", { credentials: "include" });
         const data = await res.json();
         _adminSizeUnit = data.size_unit || "both";
         applySizeUnit(_adminSizeUnit);
@@ -1016,7 +1016,7 @@ function applySizeUnit(unit) {
 async function setSizeUnit(unit) {
     applySizeUnit(unit);
     try {
-        await fetch("/api/admin/site-settings", {
+        await fetch("/api/x9k2/site-settings", {
             method: "POST", credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ size_unit: unit })

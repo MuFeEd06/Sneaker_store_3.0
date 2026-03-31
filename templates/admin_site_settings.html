@@ -483,7 +483,7 @@ async function apiSave(payload, successMsg) {
             headers:{'Content-Type':'application/json'},
             body: JSON.stringify(payload)
         });
-        if (res.redirected) { showToast('Session expired', false); window.location.href='/admin'; return; }
+        if (res.redirected) { showToast('Session expired', false); window.location.href='/manage-store-x9k2'; return; }
         const data = await res.json();
         if (data.success) showToast(successMsg || '✅ Saved!');
         else showToast(data.error || 'Failed', false);
