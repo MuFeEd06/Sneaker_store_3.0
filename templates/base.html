@@ -4,12 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}CALVAC{% endblock %}</title>
+
+    {% if site_settings.hero_font and site_settings.hero_font != 'default' %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family={{ site_settings.hero_font | replace(' ','+') }}:wght@400;700;900&display=swap" rel="stylesheet">
+    {% endif %}
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    {# Theme override — loaded AFTER style.css so it always wins #}
+    <style id="theme-override">
+        :root {
+            --primary:       {{ site_settings.theme.primary }};
+            --primary-dark:  {{ site_settings.theme.primary_dark }};
+            --primary-light: {{ site_settings.theme.primary_light }};
+            --glass-border:  {{ site_settings.theme.rgba_018 }};
+            --shadow:        0 4px 24px {{ site_settings.theme.rgba_010 }};
+            --shadow-hover:  0 8px 32px {{ site_settings.theme.rgba_022 }};
+            --hero-font:     {{ ("'" + site_settings.hero_font + "', ") if site_settings.hero_font and site_settings.hero_font != 'default' else '' }}system-ui, sans-serif;
+        }
+        /* Explicit overrides for elements that don't inherit vars cleanly */
+        .card button {
+            background: {{ site_settings.theme.primary }};
+            border-color: {{ site_settings.theme.primary }};
+            color: #ffffff !important;
+        }
+        .card button:hover {
+            background: {{ site_settings.theme.primary_dark }};
+            border-color: {{ site_settings.theme.primary_dark }};
+            color: #ffffff !important;
+        }
+        .price, .card-price, .section-title, .logo,
+        .floating-cart, .brand-tile:hover .brand-tile-arrow {
+            color: {{ site_settings.theme.primary }};
+        }
+        header {
+            border-bottom-color: {{ site_settings.theme.rgba_018 }};
+            box-shadow: 0 2px 16px {{ site_settings.theme.rgba_008 }};
+        }
+        {% if site_settings.hero_font and site_settings.hero_font != 'default' %}
+        .hero-headline, .hero-eyebrow, .hero-sub, .hero-cta {
+            font-family: '{{ site_settings.hero_font }}', system-ui, sans-serif;
+        }
+        {% endif %}
+    </style>
+
     {% block head %}{% endblock %}
 </head>
 <body>
 
-    <a href="https://wa.me/918606466821" class="whatsapp-btn" target="_blank" aria-label="Chat on WhatsApp">
+    <a href="https://wa.me/919645087584" class="whatsapp-btn" target="_blank" aria-label="Chat on WhatsApp">
         <img src="{{ url_for('static', filename='logo/whatsapp.png') }}" alt="WhatsApp">
     </a>
 
@@ -23,9 +68,9 @@
             </div>
             <div>
                 <h3>Support</h3>
-                <a href="#">Privacy Policy</a>
-                <a href="#">Refund Policy</a>
-                <a href="#">Shipping</a>
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/refund">Refund Policy</a>
+                <a href="/shipping">Shipping</a>
             </div>
             <div>
                 <h3>Newsletter</h3>
