@@ -107,16 +107,15 @@ def ensure_db():
 def get_offer():
     _default = {"active": False, "text": "", "bg_color": "#FF6B35", "text_color": "#ffffff", "show_logo": False}
     if not USE_DB:
-        return _default
+        return _default.copy()
     try:
         row = Setting.query.get("offer")
         if row:
             saved = json.loads(row.value)
-            # Ensure show_logo key always exists
-            saved.setdefault("show_logo", False)
+            saved.setdefault("show_logo", False)  # add key if missing in old records
             return saved
     except: pass
-    return _default
+    return _default.copy()
 
 def set_offer(data):
     row = Setting.query.get("offer")
