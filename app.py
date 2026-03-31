@@ -8,6 +8,8 @@ from flask import (Flask, jsonify, render_template, request,
 from flask_cors import CORS
 from models import db, Product, Setting, Order, OrderItem
 import json, os, copy, re
+from collections import defaultdict
+import time as _time
 import urllib.request, urllib.error
 from datetime import datetime, timedelta
 from functools import wraps
@@ -16,7 +18,18 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__,
             static_folder=os.path.join(os.path.dirname(__file__), "static"),
             template_folder=os.path.join(os.path.dirname(__file__), "templates"))
-CORS(app)
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            "https://calvac.in",
+            "https://www.calvac.in",
+            "https://claxxic-india.vercel.app",
+        ],
+        "methods": ["GET","POST","PUT","DELETE"],
+        "allow_headers": ["Content-Type"],
+        "supports_credentials": True,
+    }
+})
 
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -41,7 +54,12 @@ else:
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SECRET_KEY"]                     = os.environ.get("SECRET_KEY", "claxxic-secret-2026")
+_secret = os.environ.get("SECRET_KEY", "")
+if not _secret or _secret == "claxxic-secret-2026":
+    import secrets as _sec
+    _secret = _sec.token_hex(32)  # random per cold start — sessions won't survive restarts
+    print("[claxxic] ⚠️  SECRET_KEY not set — using random key. Set SECRET_KEY env var in Vercel!")
+app.config["SECRET_KEY"] = _secret
 app.config["SESSION_COOKIE_SECURE"]          = True
 app.config["SESSION_COOKIE_HTTPONLY"]        = True
 app.config["SESSION_COOKIE_SAMESITE"]        = "Lax"
@@ -52,6 +70,27 @@ db.init_app(app)
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "claxxic@admin")
 ALLOWED_EXT    = {"png", "jpg", "jpeg", "webp"}
+
+# ── LOGIN RATE LIMITING (in-memory, resets on cold start) ─────────────────────
+_login_attempts  = defaultdict(list)   # ip → [timestamps]
+_MAX_ATTEMPTS    = 5
+_WINDOW_SECONDS  = 300   # 5 minute window
+_LOCKOUT_SECONDS = 900   # 15 minute lockout after max attempts
+
+def _check_rate_limit(ip: str) -> tuple[bool, int]:
+    """Returns (is_locked_out, seconds_remaining). Cleans old entries."""
+    now = _time.time()
+    attempts = _login_attempts[ip]
+    # Remove attempts older than lockout window
+    _login_attempts[ip] = [t for t in attempts if now - t < _LOCKOUT_SECONDS]
+    recent = [t for t in _login_attempts[ip] if now - t < _WINDOW_SECONDS]
+    if len(recent) >= _MAX_ATTEMPTS:
+        wait = int(_LOCKOUT_SECONDS - (now - recent[0]))
+        return True, max(0, wait)
+    return False, 0
+
+def _record_attempt(ip: str):
+    _login_attempts[ip].append(_time.time())
 
 # ── SUPABASE STORAGE CONFIG ───────────────────────────────────────────────────
 # Extract project ref and service key from env vars
@@ -88,6 +127,18 @@ def _supabase_upload(file_bytes, content_type, storage_path):
 # ── LAZY DB INIT — runs on first request, not at module load ──────────────────
 _db_ready = False
 
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to every response."""
+    response.headers["X-Content-Type-Options"]    = "nosniff"
+    response.headers["X-Frame-Options"]           = "SAMEORIGIN"
+    response.headers["Referrer-Policy"]           = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"]        = "geolocation=(), microphone=(), camera=()"
+    # Only add HSTS on HTTPS (Vercel handles this but belt+suspenders)
+    if request.is_secure:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
 @app.before_request
 def ensure_db():
     global _db_ready, USE_DB
@@ -105,17 +156,13 @@ def ensure_db():
 # ── HELPERS ───────────────────────────────────────────────────────────────────
 
 def get_offer():
-    _default = {"active": False, "text": "", "bg_color": "#FF6B35", "text_color": "#ffffff", "show_logo": False}
     if not USE_DB:
-        return _default
+        return {"active": False, "text": "", "bg_color": "#FF6B35", "text_color": "#ffffff"}
     try:
         row = Setting.query.get("offer")
-        if row:
-            data = json.loads(row.value)
-            data.setdefault("show_logo", False)
-            return data
+        if row: return json.loads(row.value)
     except: pass
-    return _default
+    return {"active": False, "text": "", "bg_color": "#FF6B35", "text_color": "#ffffff"}
 
 def set_offer(data):
     row = Setting.query.get("offer")
@@ -283,7 +330,20 @@ def fix_image_paths(products_list):
                 c["image"] = "/static/" + c["image"]
     return result
 
+ALLOWED_MIMES = {"image/jpeg","image/png","image/webp","image/gif"}
+
 def allowed_file(f): return "." in f and f.rsplit(".",1)[1].lower() in ALLOWED_EXT
+
+def allowed_mime(file_storage):
+    """Check actual MIME type of uploaded file, not just extension."""
+    # Read first 12 bytes to check magic numbers
+    header = file_storage.read(12)
+    file_storage.seek(0)
+    # JPEG: FF D8 FF | PNG: 89 50 4E 47 | WEBP: 52 49 46 46...57 45 42 50
+    if header[:3] == b"\xff\xd8\xff": return True
+    if header[:4] == b"\x89PNG":       return True
+    if header[:4] == b"RIFF" and header[8:12] == b"WEBP": return True
+    return False
 def slugify(t): return re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-")
 def format_inr(n): return f"₹{int(n):,}"
 
@@ -308,20 +368,47 @@ def brand(): return render_template("brand.html")
 def cart(): return render_template("cart.html")
 
 
+# ── OLD ADMIN URL — return 404 so path is not guessable ──────────────────────
+@app.route("/admin", methods=["GET","POST"])
+@app.route("/admin/dashboard")
+@app.route("/admin/products")
+@app.route("/admin/site-settings")
+@app.route("/admin/logout")
+def old_admin_redirect():
+    abort(404)
+
 # ── ADMIN AUTH ────────────────────────────────────────────────────────────────
 
-@app.route("/admin", methods=["GET", "POST"])
+@app.route("/manage-store-x9k2", methods=["GET", "POST"])
 def admin_login():
     error = None
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
+
     if request.method == "POST":
+        locked, wait = _check_rate_limit(client_ip)
+        if locked:
+            error = f"Too many attempts. Try again in {wait // 60 + 1} minutes."
+            return render_template("admin_login.html", error=error)
+
         if request.form.get("password") == ADMIN_PASSWORD:
+            # Clear attempts on success
+            _login_attempts.pop(client_ip, None)
             session.permanent = True
             session["admin_logged_in"] = True
             return redirect(url_for("admin_dashboard"))
-        error = "Incorrect password."
+        else:
+            _record_attempt(client_ip)
+            locked, wait = _check_rate_limit(client_ip)
+            if locked:
+                error = f"Too many failed attempts. Locked out for {wait // 60 + 1} minutes."
+            else:
+                remaining = _MAX_ATTEMPTS - len([t for t in _login_attempts[client_ip]
+                                                  if _time.time() - t < _WINDOW_SECONDS])
+                error = f"Incorrect password. {remaining} attempt(s) remaining."
+
     return render_template("admin_login.html", error=error)
 
-@app.route("/admin/logout")
+@app.route("/manage-store-x9k2/logout")
 def admin_logout():
     session.clear()
     return redirect(url_for("admin_login"))
@@ -329,7 +416,7 @@ def admin_logout():
 
 # ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
 
-@app.route("/admin/dashboard")
+@app.route("/manage-store-x9k2/dashboard")
 @admin_required
 def admin_dashboard():
     if USE_DB:
@@ -359,7 +446,7 @@ def admin_dashboard():
 # ── ADMIN PRODUCTS ────────────────────────────────────────────────────────────
 
 
-@app.route("/admin/site-settings")
+@app.route("/manage-store-x9k2/site-settings")
 @admin_required
 def admin_site_settings_page():
     return render_template("admin_site_settings.html",
@@ -391,7 +478,7 @@ def page_shipping():
         content=s.get("policy_shipping",""),
         active="shipping")
 
-@app.route("/admin/products")
+@app.route("/manage-store-x9k2/products")
 @admin_required
 def admin_products():
     products = [p.to_dict() for p in Product.query.order_by(Product.brand, Product.name).all()] if USE_DB else []
@@ -464,7 +551,7 @@ def api_public_site_settings():
 
 # ── ADMIN API ─────────────────────────────────────────────────────────────────
 
-@app.route("/api/admin/products", methods=["POST"])
+@app.route("/api/x9k2/products", methods=["POST"])
 @admin_required
 def api_add_product():
     if not USE_DB: return jsonify({"error": "No database"}), 503
@@ -494,7 +581,7 @@ def api_add_product():
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()}), 201
 
-@app.route("/api/admin/products/<int:product_id>", methods=["PUT"])
+@app.route("/api/x9k2/products/<int:product_id>", methods=["PUT"])
 @admin_required
 def api_update_product(product_id):
     if not USE_DB: return jsonify({"error": "No database"}), 503
@@ -525,7 +612,7 @@ def api_update_product(product_id):
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()})
 
-@app.route("/api/admin/products/<int:product_id>", methods=["DELETE"])
+@app.route("/api/x9k2/products/<int:product_id>", methods=["DELETE"])
 @admin_required
 def api_delete_product(product_id):
     if not USE_DB: return jsonify({"error": "No database"}), 503
@@ -535,7 +622,7 @@ def api_delete_product(product_id):
     db.session.commit()
     return jsonify({"success": True})
 
-@app.route("/api/admin/upload-image", methods=["POST"])
+@app.route("/api/x9k2/upload-image", methods=["POST"])
 @admin_required
 def api_upload_image():
     if "image" not in request.files: return jsonify({"error": "No file"}), 400
@@ -557,7 +644,7 @@ def api_upload_image():
         print(f"[claxxic] Upload error: {e}")
         return jsonify({"error": f"Upload failed: {str(e)}"}), 500
 
-@app.route("/api/admin/offer", methods=["POST"])
+@app.route("/api/x9k2/offer", methods=["POST"])
 @admin_required
 def api_save_offer():
     if not USE_DB: return jsonify({"error": "No database"}), 503
@@ -570,12 +657,12 @@ def api_save_offer():
     set_offer(offer)
     return jsonify({"success": True, "offer": offer})
 
-@app.route("/api/admin/site-settings", methods=["GET"])
+@app.route("/api/x9k2/site-settings", methods=["GET"])
 @admin_required
 def api_get_site_settings():
     return jsonify(get_site_settings())
 
-@app.route("/api/admin/site-settings", methods=["POST"])
+@app.route("/api/x9k2/site-settings", methods=["POST"])
 @admin_required
 def api_save_site_settings():
     if not USE_DB: return jsonify({"error": "No database"}), 503
@@ -595,7 +682,7 @@ def api_save_site_settings():
     save_site_settings(clean)
     return jsonify({"success": True, "settings": clean})
 
-@app.route("/api/admin/upload-model", methods=["POST"])
+@app.route("/api/x9k2/upload-model", methods=["POST"])
 @admin_required
 def api_upload_model():
     if "model" not in request.files:
@@ -704,14 +791,14 @@ def update_order_notes(order_id):
 # ── ERRORS ────────────────────────────────────────────────────────────────────
 
 
-@app.route("/api/admin/products/<int:product_id>/stock", methods=["GET"])
+@app.route("/api/x9k2/products/<int:product_id>/stock", methods=["GET"])
 @admin_required
 def api_get_stock(product_id):
     if not USE_DB: return jsonify({}), 503
     p = Product.query.get_or_404(product_id)
     return jsonify(p.get_stock())
 
-@app.route("/api/admin/products/<int:product_id>/stock", methods=["POST"])
+@app.route("/api/x9k2/products/<int:product_id>/stock", methods=["POST"])
 @admin_required
 def api_set_stock(product_id):
     if not USE_DB: return jsonify({"error": "No DB"}), 503
