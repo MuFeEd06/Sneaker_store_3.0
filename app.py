@@ -73,7 +73,7 @@ ALLOWED_EXT    = {"png", "jpg", "jpeg", "webp"}
 
 # ── LOGIN RATE LIMITING (in-memory, resets on cold start) ─────────────────────
 _login_attempts  = defaultdict(list)   # ip → [timestamps]
-_MAX_ATTEMPTS    = 5
+_MAX_ATTEMPTS    = 2
 _WINDOW_SECONDS  = 300   # 5 minute window
 _LOCKOUT_SECONDS = 900   # 15 minute lockout after max attempts
 
