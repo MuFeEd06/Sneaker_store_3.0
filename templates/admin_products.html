@@ -479,16 +479,12 @@
                 <div style="display:flex;align-items:center;gap:6px;">
                     <span style="font-size:0.72rem;color:#9badb8;font-weight:600;">Display unit:</span>
                     <div style="display:flex;border:1.5px solid #d0e6f5;border-radius:20px;overflow:hidden;background:#f4f8fb;">
-                        <button type="button" id="su-both-btn" onclick="setSizeUnit('both')"
-                            style="padding:4px 10px;font-size:0.72rem;font-weight:700;border:none;cursor:pointer;background:#2B9FD8;color:#fff;transition:all 0.15s;">
-                            UK/EU
-                        </button>
                         <button type="button" id="su-uk-btn" onclick="setSizeUnit('uk')"
-                            style="padding:4px 10px;font-size:0.72rem;font-weight:700;border:none;cursor:pointer;background:transparent;color:#5a6a7a;transition:all 0.15s;">
+                            style="padding:4px 14px;font-size:0.72rem;font-weight:700;border:none;cursor:pointer;background:#2B9FD8;color:#fff;transition:all 0.15s;">
                             UK
                         </button>
                         <button type="button" id="su-euro-btn" onclick="setSizeUnit('euro')"
-                            style="padding:4px 10px;font-size:0.72rem;font-weight:700;border:none;cursor:pointer;background:transparent;color:#5a6a7a;transition:all 0.15s;">
+                            style="padding:4px 14px;font-size:0.72rem;font-weight:700;border:none;cursor:pointer;background:transparent;color:#5a6a7a;transition:all 0.15s;">
                             EU
                         </button>
                     </div>
@@ -1015,18 +1011,18 @@ async function initSizeUnit() {
     try {
         const res  = await fetch("/api/x9k2/site-settings", { credentials: "include" });
         const data = await res.json();
-        _adminSizeUnit = data.size_unit || "both";
+        _adminSizeUnit = (data.size_unit === "euro") ? "euro" : "uk";
         applySizeUnit(_adminSizeUnit);
     } catch(e) { applySizeUnit("both"); }
 }
 
 function applySizeUnit(unit) {
+    // Only allow "uk" or "euro"
+    if (unit !== "uk" && unit !== "euro") unit = "uk";
     _adminSizeUnit = unit;
-    // Update body class for CSS-driven chip label visibility
-    document.body.classList.remove("su-uk", "su-euro", "su-both");
+    document.body.classList.remove("su-uk", "su-euro");
     document.body.classList.add("su-" + unit);
-    // Highlight active button
-    ["both","uk","euro"].forEach(u => {
+    ["uk","euro"].forEach(u => {
         const btn = document.getElementById("su-" + u + "-btn");
         if (!btn) return;
         btn.style.background = u === unit ? "#2B9FD8" : "transparent";
