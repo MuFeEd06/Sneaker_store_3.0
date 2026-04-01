@@ -238,7 +238,7 @@ DEFAULT_SITE_SETTINGS = {
     # Brand section visibility
     "hidden_brands": "",
     "show_brands_section": True,
-    "size_unit": "both",
+    "size_unit": "uk",   # "uk" or "euro" — no both option
     # Policy pages content (markdown/HTML stored as plain text)
     "policy_privacy":  "# Privacy Policy\n\nYour privacy is important to us. We do not share your personal data with third parties.",
     "policy_refund":   "# Refund Policy\n\nWe accept returns within 7 days of delivery. Items must be unused and in original packaging.",
@@ -279,11 +279,12 @@ def get_site_settings():
         row = Setting.query.get("site_settings")
         if row and row.value:
             saved = json.loads(row.value)
-            # Merge: saved values override defaults
-            # Only skip None — empty string "" is valid (user cleared a field intentionally)
             for k, v in saved.items():
                 if v is not None:
                     defaults[k] = v
+            # Normalise legacy "both" → "uk" (we removed the both option)
+            if defaults.get("size_unit") == "both":
+                defaults["size_unit"] = "uk"
     except Exception as e:
         print(f"[calvac] get_site_settings parse error: {e}")
     defaults["offer"] = get_offer()
@@ -301,6 +302,9 @@ def save_site_settings(data):
             existing = {}
     # Merge: new data overrides existing, skip "offer" key
     merged = {**existing, **{k: v for k, v in data.items() if k != "offer"}}
+    # Normalise: no "both" size_unit — treat as "uk"
+    if merged.get("size_unit") == "both":
+        merged["size_unit"] = "uk"
     if row:
         row.value = json.dumps(merged)
     else:
