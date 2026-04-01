@@ -1004,9 +1004,10 @@ function getSizeLabel(size) {
    Display is controlled by _sizeUnit preference.
 ================================================= */
 const UK_TO_EU = {
-    "UK 5":"EU 38",  "UK 6":"EU 39",  "UK 6.5":"EU 40",
-    "UK 7":"EU 41",  "UK 8":"EU 42",  "UK 9":"EU 43",
-    "UK 10":"EU 44", "UK 11":"EU 45", "UK 11.5":"EU 46", "UK 12":"EU 47"
+    "UK 3":"EU 35",  "UK 3.5":"EU 36", "UK 4":"EU 37",
+    "UK 5":"EU 38",  "UK 6":"EU 39",   "UK 6.5":"EU 40",
+    "UK 7":"EU 41",  "UK 8":"EU 42",   "UK 9":"EU 43",
+    "UK 10":"EU 44", "UK 11":"EU 45",  "UK 11.5":"EU 46", "UK 12":"EU 47"
 };
 const EU_TO_UK = Object.fromEntries(Object.entries(UK_TO_EU).map(([k,v])=>[v,k]));
 
