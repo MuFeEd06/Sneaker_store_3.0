@@ -238,6 +238,8 @@ DEFAULT_SITE_SETTINGS = {
     # Brand section visibility
     "hidden_brands": "",
     "show_brands_section": True,
+    # New Arrivals section
+    "show_new_arrivals": True,
     "size_unit": "uk",   # "uk" or "euro" — no both option
     # Policy pages content (markdown/HTML stored as plain text)
     "policy_privacy":  "# Privacy Policy\n\nYour privacy is important to us. We do not share your personal data with third parties.",
@@ -549,7 +551,8 @@ def api_public_site_settings():
         "model_scale":   s.get("model_scale",3.0),
         "model_y":       s.get("model_y",0.8),
         "model_speed":   s.get("model_speed",0.006),
-        "size_unit":     s.get("size_unit","uk"),   # ← was missing!
+        "size_unit":         s.get("size_unit","uk"),
+        "show_new_arrivals": s.get("show_new_arrivals", True),
     })
 
 
@@ -700,6 +703,7 @@ def api_save_site_settings():
         "tag1_icon","tag1_title","tag1_sub","tag2_icon","tag2_title","tag2_sub",
         "tag3_icon","tag3_title","tag3_sub","tag4_icon","tag4_title","tag4_sub",
         "hidden_brands","show_brands_section",
+        "show_new_arrivals",
         "size_unit",
         "policy_privacy","policy_refund","policy_shipping",
     }

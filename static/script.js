@@ -1,3 +1,94 @@
+
+/* =================================================
+   NEW ARRIVALS CAROUSEL
+================================================= */
+async function renderNewArrivals() {
+    const wrap  = document.getElementById("new-arrivals-wrap");
+    const track = document.getElementById("new-arrivals-track");
+    if (!wrap || !track) return;
+
+    try {
+        const res  = await fetch("/api/products?tag=new");
+        const data = await res.json();
+        if (!data || data.length === 0) {
+            // Hide section if no new products
+            const section = document.getElementById("new-arrivals");
+            if (section) section.style.display = "none";
+            return;
+        }
+
+        track.innerHTML = "";
+        data.forEach(shoe => {
+            const deal  = getDeal(shoe);
+            const oos   = shoe.out_of_stock === true;
+            const img   = shoe.image
+                ? (shoe.image.startsWith("http") ? shoe.image : "/static/" + shoe.image)
+                : "https://placehold.co/300x300/eaf3fa/2B9FD8?text=No+Image";
+
+            const card = document.createElement("div");
+            card.className = "new-arrivals-card";
+            card.innerHTML = `
+                <div class="na-card-img-wrap">
+                    <img src="${img}" alt="${shoe.name}"
+                         loading="lazy"
+                         onerror="this.src='https://placehold.co/300x300/eaf3fa/2B9FD8?text=No+Image'">
+                </div>
+                <span class="na-card-badge">New</span>
+                <div class="na-card-body">
+                    <div class="na-card-brand">${shoe.brand}</div>
+                    <div class="na-card-name">${shoe.name}</div>
+                    <div class="na-card-price">
+                        ${formatPrice(shoe.price)}
+                        ${deal ? `<span class="na-card-orig">${formatPrice(deal.origPrice)}</span>` : ""}
+                    </div>
+                </div>
+            `;
+            if (!oos) {
+                card.addEventListener("click", () => openProduct(shoe.id));
+            } else {
+                card.style.opacity = "0.55";
+            }
+            track.appendChild(card);
+        });
+
+        // ── Drag-to-scroll (mouse) ──────────────────────────────────────────
+        let isDragging = false, startX = 0, scrollStart = 0;
+
+        wrap.addEventListener("mousedown", e => {
+            isDragging  = true;
+            startX      = e.pageX;
+            scrollStart = wrap.scrollLeft;
+            wrap.classList.add("dragging");
+        });
+        window.addEventListener("mousemove", e => {
+            if (!isDragging) return;
+            wrap.scrollLeft = scrollStart - (e.pageX - startX);
+        });
+        window.addEventListener("mouseup", () => {
+            isDragging = false;
+            wrap.classList.remove("dragging");
+        });
+
+        // ── Touch scroll is native via overflow-x:auto ──────────────────────
+        // Prevent accidental card tap after a drag
+        let touchStartX = 0;
+        wrap.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+        wrap.addEventListener("touchend",   e => {
+            const delta = Math.abs(e.changedTouches[0].clientX - touchStartX);
+            if (delta > 8) {
+                // Was a swipe — prevent the click from firing
+                wrap.querySelectorAll(".new-arrivals-card").forEach(c => {
+                    c.style.pointerEvents = "none";
+                    setTimeout(() => c.style.pointerEvents = "", 200);
+                });
+            }
+        }, { passive: true });
+
+    } catch(e) {
+        console.error("New arrivals failed:", e);
+    }
+}
+
 /* =================================================
    BRAND DEFINITIONS — local logo images
    All logos go in: logo/brands/<slug>.png
@@ -1156,7 +1247,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const onProduct = !!document.getElementById("product-name");
     const onCart    = !!document.getElementById("cart-items-list");
 
-    if (onHome)    { renderBrandTiles(); renderTrendingShoes(); }
+    if (onHome)    { renderNewArrivals(); renderBrandTiles(); renderTrendingShoes(); }
     if (onBrand)   renderBrandPage();
     if (onProduct) { loadSizeUnit().then(loadProductPage); }
     if (onCart)    renderCartPage();

@@ -248,6 +248,21 @@
         <div class="save-bar"><button class="btn-save" onclick="saveOffer()">Save Ribbon</button></div>
     </div>
 
+    <!-- ── NEW ARRIVALS ── -->
+    <div class="panel">
+        <div class="panel-title">🆕 New Arrivals Section</div>
+        <p style="font-size:0.85rem;color:#5a6a7a;margin-bottom:14px;">
+            Shows products tagged <strong>New</strong> in a horizontal scrolling carousel — between the hero and Shop by Brand.
+        </p>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="ss-show-new-arrivals" style="width:18px;height:18px;accent-color:#2B9FD8;" checked>
+            <span style="font-size:0.95rem;font-weight:600;">Show "New Arrivals" section on homepage</span>
+        </label>
+        <div class="save-bar">
+            <button class="btn-save" onclick="saveSection('new_arrivals')">Save</button>
+        </div>
+    </div>
+
     <!-- ── BRAND VISIBILITY ── -->
     <div class="panel">
         <div class="panel-title">🏷️ Shop by Brand — Visibility</div>
@@ -456,6 +471,7 @@ async function loadSettings() {
         // Brand visibility
         buildBrandToggles(s.hidden_brands || '');
         document.getElementById('ss-show-brands').checked = s.show_brands_section !== false;
+        const _naEl = document.getElementById('ss-show-new-arrivals'); if(_naEl) _naEl.checked = s.show_new_arrivals !== false;
 
         // Policy pages
         if (s.policy_privacy)  document.getElementById('ss-policy-privacy').value  = s.policy_privacy;
@@ -526,6 +542,11 @@ async function saveSection(section) {
     } else if (section === 'policies') {
         await savePolicies();
         return;
+    } else if (section === 'new_arrivals') {
+        await apiSave({
+            show_new_arrivals: document.getElementById('ss-show-new-arrivals')?.checked ?? true,
+        }, '✅ New Arrivals setting saved! Refresh homepage to see change.');
+
     } else if (section === 'brands') {
         await apiSave({
             show_brands_section: document.getElementById('ss-show-brands').checked,

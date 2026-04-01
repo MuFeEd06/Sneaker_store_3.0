@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}CALVAC — Premium Sneakers{% endblock %}
+{% block title %}Claxxic India — Premium Sneakers{% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/meshoptimizer@0.18.1/meshopt_decoder.js"></script>
@@ -11,7 +11,7 @@
 
     <header>
         <div class="logo-container">
-            <h1 class="logo">CALVAC</h1>
+            <h1 class="logo">Claxxic India</h1>
             <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Sneaker Logo">
         </div>
 
@@ -45,24 +45,20 @@
 
     {% if site_settings.offer and site_settings.offer.active and site_settings.offer.text %}
     <div id="offer-ribbon" style="background:{{ site_settings.offer.bg_color }};color:{{ site_settings.offer.text_color }};padding:8px 0;overflow:hidden;position:relative;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-        <style>
-            @keyframes ribbonScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-            .ribbon-track { display:flex; width:max-content; animation:ribbonScroll 22s linear infinite; align-items:center; }
-            .ribbon-item  { display:inline-flex; align-items:center; gap:10px; padding:0 36px; font-size:0.88rem; font-weight:700; letter-spacing:0.3px; white-space:nowrap; flex-shrink:0; }
-            .ribbon-logo  { height:40px; width:auto; object-fit:contain; vertical-align:middle; }
-            .ribbon-sep   { opacity:0.35; }
-        </style>
-        <div class="ribbon-track">
-            {% for i in range(12) %}
-            <span class="ribbon-item">
+        <div style="display:inline-flex;align-items:center;animation:ribbonScroll 20s linear infinite;white-space:nowrap;">
+            {% for i in range(8) %}
+            <span style="display:inline-flex;align-items:center;gap:10px;padding:0 40px;font-size:0.88rem;font-weight:700;letter-spacing:0.3px;">
                 {% if site_settings.offer.show_logo %}
-                <img src="{{ url_for('static', filename='logo/logo.png') }}" class="ribbon-logo" alt="">
+                <img src="{{ url_for('static', filename='logo/logo.png') }}"
+                     alt="Logo"
+                     style="height:22px;width:auto;object-fit:contain;opacity:0.9;vertical-align:middle;">
                 {% endif %}
                 {{ site_settings.offer.text }}
-                <span class="ribbon-sep">✦</span>
+                <span style="opacity:0.35;">✦</span>
             </span>
             {% endfor %}
         </div>
+        <style>@keyframes ribbonScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}</style>
     </div>
     {% endif %}
 
@@ -439,6 +435,23 @@
             <div class="scroll-dot"></div>
         </div>
     </section>
+
+    {% if site_settings.show_new_arrivals != False %}
+    <section class="new-arrivals-section fade-in" id="new-arrivals">
+        <div class="new-arrivals-header">
+            <a href="/brand?tag=new" class="new-arrivals-title-link">
+                <h2 class="section-title new-arrivals-title">
+                    New Arrivals
+                    <span class="new-arrivals-arrow">→</span>
+                </h2>
+            </a>
+            <p class="new-arrivals-sub">Swipe to explore · tap title to see all</p>
+        </div>
+        <div class="new-arrivals-track-wrap" id="new-arrivals-wrap">
+            <div class="new-arrivals-track" id="new-arrivals-track"></div>
+        </div>
+    </section>
+    {% endif %}
 
     {% if site_settings.show_brands_section != False %}
     <section class="collections-section fade-in" id="collections"
