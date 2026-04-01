@@ -491,9 +491,11 @@
                     <span style="font-size:0.68rem;color:#b0c4d4;">Saves to Site Settings</span>
                 </div>
             </div>
-            <!-- Size chips: data-size ALWAYS stores UK value. Display is CSS-controlled -->
+            <!-- Size chips: data-size stores UK value; EU display is CSS-controlled -->
+            <!-- UK range: UK 3 – UK 11 | EU range: EU 35 – EU 47 -->
             <div class="sizes-wrap" id="sizes-wrap">
                 {% for s, e in [
+                    ("UK 3","EU 35"),("UK 3.5","EU 36"),("UK 4","EU 37"),
                     ("UK 5","EU 38"),("UK 6","EU 39"),("UK 6.5","EU 40"),
                     ("UK 7","EU 41"),("UK 8","EU 42"),("UK 9","EU 43"),
                     ("UK 10","EU 44"),("UK 11","EU 45"),("UK 11.5","EU 46"),("UK 12","EU 47")
@@ -929,9 +931,10 @@ async function deleteProduct(id, name) {
 
 // UK→EU map for inventory display (mirrors script.js)
 const ADMIN_UK_TO_EU = {
-    "UK 5":"EU 38", "UK 6":"EU 39", "UK 6.5":"EU 40",
-    "UK 7":"EU 41", "UK 8":"EU 42", "UK 9":"EU 43",
-    "UK 10":"EU 44","UK 11":"EU 45","UK 11.5":"EU 46","UK 12":"EU 47"
+    "UK 3":"EU 35",  "UK 3.5":"EU 36", "UK 4":"EU 37",
+    "UK 5":"EU 38",  "UK 6":"EU 39",   "UK 6.5":"EU 40",
+    "UK 7":"EU 41",  "UK 8":"EU 42",   "UK 9":"EU 43",
+    "UK 10":"EU 44", "UK 11":"EU 45",  "UK 11.5":"EU 46", "UK 12":"EU 47"
 };
 
 function getInvSizeLabel(ukSize) {
@@ -1011,18 +1014,18 @@ async function initSizeUnit() {
     try {
         const res  = await fetch("/api/x9k2/site-settings", { credentials: "include" });
         const data = await res.json();
-        _adminSizeUnit = (data.size_unit === "euro") ? "euro" : "uk";
+        _adminSizeUnit = data.size_unit || "both";
         applySizeUnit(_adminSizeUnit);
     } catch(e) { applySizeUnit("both"); }
 }
 
 function applySizeUnit(unit) {
-    // Only allow "uk" or "euro"
-    if (unit !== "uk" && unit !== "euro") unit = "uk";
     _adminSizeUnit = unit;
-    document.body.classList.remove("su-uk", "su-euro");
+    // Update body class for CSS-driven chip label visibility
+    document.body.classList.remove("su-uk", "su-euro", "su-both");
     document.body.classList.add("su-" + unit);
-    ["uk","euro"].forEach(u => {
+    // Highlight active button
+    ["both","uk","euro"].forEach(u => {
         const btn = document.getElementById("su-" + u + "-btn");
         if (!btn) return;
         btn.style.background = u === unit ? "#2B9FD8" : "transparent";
@@ -1032,13 +1035,15 @@ function applySizeUnit(unit) {
 
 async function setSizeUnit(unit) {
     applySizeUnit(unit);
+    // Clear all size selections when switching units to avoid cross-unit confusion
+    document.querySelectorAll(".size-chip.selected").forEach(c => c.classList.remove("selected"));
     try {
         await fetch("/api/x9k2/site-settings", {
             method: "POST", credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ size_unit: unit })
         });
-        showToast("✅ Size unit set to " + unit.toUpperCase());
+        showToast("✅ Size unit set to " + unit.toUpperCase() + " — please reselect sizes");
     } catch(e) {
         showToast("Saved locally — sync may fail", false);
     }
