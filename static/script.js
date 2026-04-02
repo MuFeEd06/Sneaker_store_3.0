@@ -794,19 +794,67 @@ async function renderBrandPage() {
                 monogramEl.innerHTML = `<span style="font-size:2rem;">🔍</span>`;
             }
             document.title = `${searchQ} — CALVAC`;
-        } else {
-            // Brand page mode — fuzzy match brand name
-            const qb = norm(brandName);
-            filtered = products.filter(p => norm(p.brand) === qb || norm(p.brand).includes(qb));
+        } else if (params.get("tag")) {
+            // Tag filter: boots, crocs, girls, new, sale, trending, luxury
+            const tag     = params.get("tag");
+            const tagLabel= { boots:"Boots", crocs:"Crocs", girls:"Girls", new:"New Arrivals",
+                              sale:"Sale", trending:"Trending", luxury:"Luxury" }[tag] || tag;
+            filtered  = products.filter(p => p.tag === tag);
+            pageTitle = tagLabel;
+            document.title = `${tagLabel} — CALVAC`;
+            if (titleEl)      titleEl.textContent      = tagLabel;
+            if (sectionTitle) sectionTitle.textContent = `All ${tagLabel} Products`;
+            if (monogramEl) {
+                const em = { boots:"👢", crocs:"🥿", girls:"👟", new:"✨",
+                             sale:"🏷️", trending:"🔥", luxury:"💎" }[tag] || "🛍️";
+                monogramEl.style.background = "rgba(43,159,216,0.12)";
+                monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
+                monogramEl.innerHTML        = `<span style="font-size:2.4rem;">${em}</span>`;
+            }
+
+        } else if (params.get("max_price")) {
+            // Price ceiling filter: Under 1000 / 1500 / 2500
+            const max     = parseInt(params.get("max_price"));
+            const label   = `Under ₹${max.toLocaleString("en-IN")}`;
+            filtered  = products.filter(p => p.price <= max);
+            pageTitle = label;
+            document.title = `${label} — CALVAC`;
+            if (titleEl)      titleEl.textContent      = label;
+            if (sectionTitle) sectionTitle.textContent = `Shoes Priced ${label}`;
+            if (monogramEl) {
+                monogramEl.style.background = "rgba(43,159,216,0.12)";
+                monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
+                monogramEl.innerHTML        = `<span style="font-size:2.4rem;">💰</span>`;
+            }
+
+        } else if (params.get("sale")) {
+            // Sale filter: products with original_price set and above sale price
+            filtered  = products.filter(p =>
+                p.original_price && p.original_price > p.price && p.original_price > 0
+            );
+            pageTitle = "Sale";
+            document.title = `Sale — CALVAC`;
+            if (titleEl)      titleEl.textContent      = "Sale";
+            if (sectionTitle) sectionTitle.textContent = "Products On Sale";
+            if (monogramEl) {
+                monogramEl.style.background = "rgba(229,62,62,0.12)";
+                monogramEl.style.border     = "1px solid rgba(229,62,62,0.3)";
+                monogramEl.innerHTML        = `<span style="font-size:2.4rem;">🏷️</span>`;
+            }
+
+        } else if (brandName) {
+            // Brand page: fuzzy match on brand name
+            const qb  = norm(brandName);
+            filtered  = products.filter(p => norm(p.brand) === qb || norm(p.brand).includes(qb));
             pageTitle = brandName;
         }
 
-        if (countEl && !searchQ) countEl.textContent = filtered.length;
+        if (countEl) countEl.textContent = filtered.length;
 
         grid.innerHTML = "";
         if (filtered.length === 0) {
-            grid.innerHTML = `<p style="color:#bbb;text-align:center;grid-column:1/-1;padding:60px;">
-                No products found for "${searchQ || brandName}". Try a different search.
+            grid.innerHTML = `<p style="color:var(--text-muted);text-align:center;grid-column:1/-1;padding:60px 20px;">
+                No products found. Try a different filter.
             </p>`;
             return;
         }
