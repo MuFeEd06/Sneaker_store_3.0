@@ -240,6 +240,16 @@ DEFAULT_SITE_SETTINGS = {
     "show_brands_section": True,
     # New Arrivals section
     "show_new_arrivals": True,
+    # Category quick links section
+    "show_categories": True,
+    "cat_boots":       True,
+    "cat_crocs":       True,
+    "cat_girls":       True,
+    "cat_sale":        True,
+    "cat_under1000":   True,
+    "cat_under1500":   True,
+    "cat_under2500":   True,
+    "cat_new":         True,
     "size_unit": "uk",   # "uk" or "euro" — no both option
     # Policy pages content (markdown/HTML stored as plain text)
     "policy_privacy":  "# Privacy Policy\n\nYour privacy is important to us. We do not share your personal data with third parties.",
@@ -503,10 +513,12 @@ def get_products():
     min_price = request.args.get("min_price", type=int)
     max_price = request.args.get("max_price", type=int)
     search    = request.args.get("q", "").lower().strip()
+    sale      = request.args.get("sale")
     if brand:     query = query.filter(db.func.lower(Product.brand) == brand.lower())
     if tag:       query = query.filter(Product.tag == tag)
     if min_price: query = query.filter(Product.price >= min_price)
     if max_price: query = query.filter(Product.price <= max_price)
+    if sale:      query = query.filter(Product.original_price > Product.price, Product.original_price > 0)
     if search:    query = query.filter(db.or_(
         Product.name.ilike(f"%{search}%"), Product.brand.ilike(f"%{search}%")))
     return jsonify(fix_image_paths([p.to_dict() for p in query.all()]))
@@ -553,6 +565,15 @@ def api_public_site_settings():
         "model_speed":   s.get("model_speed",0.006),
         "size_unit":         s.get("size_unit","uk"),
         "show_new_arrivals": s.get("show_new_arrivals", True),
+        "show_categories":  s.get("show_categories", True),
+        "cat_boots":        s.get("cat_boots",     True),
+        "cat_crocs":        s.get("cat_crocs",     True),
+        "cat_girls":        s.get("cat_girls",     True),
+        "cat_sale":         s.get("cat_sale",      True),
+        "cat_under1000":    s.get("cat_under1000", True),
+        "cat_under1500":    s.get("cat_under1500", True),
+        "cat_under2500":    s.get("cat_under2500", True),
+        "cat_new":          s.get("cat_new",       True),
     })
 
 
@@ -704,6 +725,9 @@ def api_save_site_settings():
         "tag3_icon","tag3_title","tag3_sub","tag4_icon","tag4_title","tag4_sub",
         "hidden_brands","show_brands_section",
         "show_new_arrivals",
+        "show_categories",
+        "cat_boots","cat_crocs","cat_girls","cat_sale",
+        "cat_under1000","cat_under1500","cat_under2500","cat_new",
         "size_unit",
         "policy_privacy","policy_refund","policy_shipping",
     }
