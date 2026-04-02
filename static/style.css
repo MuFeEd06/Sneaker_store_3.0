@@ -1142,173 +1142,118 @@ footer {
 }
 
 /* =================================================
-   NEW ARRIVALS — horizontal scroll carousel
+   CATEGORY QUICK LINKS — infinite horizontal scroll
 ================================================= */
-.new-arrivals-section {
-    padding: 48px 0 12px;
-}
-
-.new-arrivals-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    padding: 0 5%;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.new-arrivals-title-link {
-    text-decoration: none;
-}
-
-.new-arrivals-title {
-    margin: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.new-arrivals-title:hover { opacity: 0.75; }
-
-.new-arrivals-arrow {
-    font-size: 1.1rem;
-    color: var(--primary);
-    transition: transform 0.2s;
-    display: inline-block;
-}
-
-.new-arrivals-title:hover .new-arrivals-arrow {
-    transform: translateX(5px);
-}
-
-.new-arrivals-sub {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    font-weight: 400;
-}
-
-/* Track wrapper — hides scrollbar, enables touch scroll */
-.new-arrivals-track-wrap {
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 4px 5% 20px;
-    cursor: grab;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    /* Hide scrollbar across browsers */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.new-arrivals-track-wrap::-webkit-scrollbar { display: none; }
-.new-arrivals-track-wrap.dragging { cursor: grabbing; scroll-behavior: auto; }
-
-/* The actual scrolling row */
-.new-arrivals-track {
-    display: flex;
-    gap: 14px;
-    width: max-content;
-    padding-bottom: 4px;
-}
-
-/* Each card in the carousel */
-.new-arrivals-card {
-    width: 44vw;          /* 2 per screen on mobile */
-    max-width: 200px;     /* cap on large screens */
-    min-width: 140px;
-    flex-shrink: 0;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
+.cat-scroll-section {
+    padding: 24px 0 8px;
     overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
     position: relative;
 }
 
-.new-arrivals-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-}
-
-.na-card-img-wrap {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-    background: var(--surface-2);
-}
-
-.na-card-img-wrap img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s;
-}
-
-.new-arrivals-card:hover .na-card-img-wrap img {
-    transform: scale(1.05);
-}
-
-.na-card-badge {
+/* Fade edges */
+.cat-scroll-section::before,
+.cat-scroll-section::after {
+    content: "";
     position: absolute;
-    top: 8px;
-    left: 8px;
-    background: var(--primary);
-    color: #fff;
-    font-size: 0.62rem;
-    font-weight: 800;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    padding: 3px 7px;
-    border-radius: 20px;
+    top: 0; bottom: 0;
+    width: 32px;
+    z-index: 2;
+    pointer-events: none;
+}
+.cat-scroll-section::before {
+    left: 0;
+    background: linear-gradient(to right, var(--bg) 0%, transparent 100%);
+}
+.cat-scroll-section::after {
+    right: 0;
+    background: linear-gradient(to left, var(--bg) 0%, transparent 100%);
 }
 
-.na-card-body {
-    padding: 10px 11px 12px;
+.cat-scroll-outer {
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+    padding: 8px 0 16px;
+}
+.cat-scroll-outer.dragging { cursor: grabbing; }
+
+/* The infinite track — JS duplicates items and animates */
+.cat-track {
+    display: flex;
+    gap: 12px;
+    width: max-content;
+    padding: 0 16px;
+    /* CSS animation drives auto-scroll; pauses on hover/drag */
+    animation: catScroll 28s linear infinite;
+}
+.cat-track:hover,
+.cat-scroll-outer.dragging .cat-track { animation-play-state: paused; }
+
+@keyframes catScroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
 }
 
-.na-card-brand {
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.7px;
-    color: var(--primary);
-    margin-bottom: 3px;
-}
-
-.na-card-name {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1.25;
-    margin-bottom: 6px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+/* Each category button */
+.cat-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    /* 1.5 cm wide × 2.5 cm tall at 96 dpi ≈ 57px × 95px */
+    width:  57px;
+    height: 95px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+    padding: 8px 4px;
+    position: relative;
     overflow: hidden;
 }
 
-.na-card-price {
-    font-size: 0.88rem;
-    font-weight: 800;
-    color: var(--primary);
+.cat-btn:hover {
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.10);
+    border-color: var(--primary);
+}
+.cat-btn:active { transform: scale(0.97); }
+
+.cat-btn-logo {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    flex-shrink: 0;
 }
 
-.na-card-orig {
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    text-decoration: line-through;
-    margin-left: 5px;
-    font-weight: 400;
+/* Emoji fallback when no image */
+.cat-btn-emoji {
+    font-size: 1.4rem;
+    line-height: 1;
 }
 
-/* 2 cards exactly at common mobile widths */
-@media (min-width: 480px) {
-    .new-arrivals-card { width: 42vw; max-width: 220px; }
+.cat-btn-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--text);
+    line-height: 1.2;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 2px;
 }
+
 @media (min-width: 768px) {
-    .new-arrivals-card { width: 200px; max-width: 220px; }
-    .new-arrivals-section { padding: 56px 0 16px; }
+    .cat-btn { width: 68px; height: 108px; }
+    .cat-btn-logo { width: 40px; height: 40px; }
+    .cat-btn-label { font-size: 0.65rem; }
+    .cat-track { gap: 14px; }
 }

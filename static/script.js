@@ -998,6 +998,145 @@ function getSizeLabel(size) {
     return { primary: size, secondary: "" };
 }
 
+
+/* =================================================
+   CATEGORY QUICK LINKS — infinite drag scroll
+================================================= */
+const CATEGORIES = [
+    { label: "Boots",      slug: "boots",      logo: "/static/logo/categories/boots.png",     emoji: "👢", url: "/brand?tag=boots"        },
+    { label: "Crocs",      slug: "crocs",      logo: "/static/logo/categories/crocs.png",     emoji: "🥿", url: "/brand?tag=crocs"        },
+    { label: "Girls",      slug: "girls",      logo: "/static/logo/categories/girls.png",     emoji: "👟", url: "/brand?tag=girls"        },
+    { label: "Sale",       slug: "sale",       logo: "/static/logo/categories/sale.png",      emoji: "🏷️", url: "/brand?tag=sale"         },
+    { label: "Under 1000", slug: "under1000",  logo: "/static/logo/categories/under1000.png", emoji: "💰", url: "/brand?max_price=1000"   },
+    { label: "Under 1500", slug: "under1500",  logo: "/static/logo/categories/under1500.png", emoji: "💸", url: "/brand?max_price=1500"   },
+    { label: "Under 2500", slug: "under2500",  logo: "/static/logo/categories/under2500.png", emoji: "🛍️", url: "/brand?max_price=2500"   },
+    { label: "New",        slug: "new",        logo: "/static/logo/categories/new.png",       emoji: "✨", url: "/brand?tag=new"          },
+];
+
+function buildCatBtn(cat) {
+    const btn = document.createElement("a");
+    btn.className = "cat-btn";
+    btn.href = cat.url;
+
+    const img = document.createElement("img");
+    img.className = "cat-btn-logo";
+    img.alt = cat.label;
+    img.loading = "lazy";
+    img.src = cat.logo;
+    img.onerror = function() {
+        // Fallback to emoji if logo missing
+        this.style.display = "none";
+        const em = document.createElement("span");
+        em.className = "cat-btn-emoji";
+        em.textContent = cat.emoji;
+        btn.insertBefore(em, this.nextSibling);
+    };
+
+    const lbl = document.createElement("span");
+    lbl.className = "cat-btn-label";
+    lbl.textContent = cat.label;
+
+    btn.appendChild(img);
+    btn.appendChild(lbl);
+    return btn;
+}
+
+function initCategoryScroll() {
+    const outer = document.getElementById("cat-scroll-outer");
+    const track = document.getElementById("cat-track");
+    if (!outer || !track) return;
+
+    // Fill track with items × 2 for seamless loop
+    // (CSS animation moves by -50% which brings us back to start)
+    const allCats = [...CATEGORIES, ...CATEGORIES];
+    allCats.forEach(cat => track.appendChild(buildCatBtn(cat)));
+
+    // ── Drag-to-scroll (mouse) with velocity ──────────────────────────────────
+    let isDown   = false;
+    let startX   = 0;
+    let scrollLeft = 0;
+    let velX     = 0;
+    let lastX    = 0;
+    let lastTime = 0;
+    let rafId    = null;
+
+    outer.addEventListener("mousedown", e => {
+        isDown = true;
+        startX = e.pageX - outer.offsetLeft;
+        scrollLeft = outer.scrollLeft;
+        lastX = e.pageX;
+        lastTime = Date.now();
+        velX = 0;
+        outer.classList.add("dragging");
+        cancelAnimationFrame(rafId);
+    });
+
+    window.addEventListener("mousemove", e => {
+        if (!isDown) return;
+        const x    = e.pageX - outer.offsetLeft;
+        const walk = x - startX;
+        outer.scrollLeft = scrollLeft - walk;
+        // Track velocity
+        const now = Date.now();
+        velX = (e.pageX - lastX) / Math.max(1, now - lastTime) * 16;
+        lastX = e.pageX;
+        lastTime = now;
+    });
+
+    window.addEventListener("mouseup", () => {
+        if (!isDown) return;
+        isDown = false;
+        outer.classList.remove("dragging");
+        // Momentum glide
+        function glide() {
+            if (Math.abs(velX) < 0.5) return;
+            outer.scrollLeft -= velX;
+            velX *= 0.92;
+            rafId = requestAnimationFrame(glide);
+        }
+        glide();
+    });
+
+    // Prevent click after drag
+    outer.addEventListener("click", e => {
+        if (Math.abs(outer.scrollLeft - scrollLeft) > 6) e.preventDefault();
+    });
+
+    // ── Infinite scroll loop — reset position when halfway ────────────────────
+    // The CSS animation handles visual loop; for drag we reset scrollLeft
+    function loopCheck() {
+        if (!isDown) {
+            const half = track.scrollWidth / 2;
+            if (outer.scrollLeft >= half)  outer.scrollLeft -= half;
+            if (outer.scrollLeft <= 0)     outer.scrollLeft += half;
+        }
+        requestAnimationFrame(loopCheck);
+    }
+    // Only loop-check on drag (CSS handles the auto-scroll loop)
+    outer.addEventListener("scroll", () => {
+        if (!isDown) return;
+        const half = track.scrollWidth / 2;
+        if (outer.scrollLeft >= half)  outer.scrollLeft -= half;
+        if (outer.scrollLeft <= 0)     outer.scrollLeft  += half;
+    }, { passive: true });
+
+    // ── Touch: native scroll + loop reset ─────────────────────────────────────
+    let touchStartX = 0;
+    outer.addEventListener("touchstart", e => {
+        touchStartX = e.touches[0].clientX;
+        outer.classList.add("dragging");
+        cancelAnimationFrame(rafId);
+    }, { passive: true });
+
+    outer.addEventListener("touchend", e => {
+        outer.classList.remove("dragging");
+        // Loop reset
+        const half = track.scrollWidth / 2;
+        if (outer.scrollLeft >= half)  outer.scrollLeft -= half;
+        if (outer.scrollLeft <= 0)     outer.scrollLeft += half;
+    }, { passive: true });
+}
+
 /* =================================================
    SIZE SYSTEM
    Sizes are ALWAYS stored as UK in the database.
@@ -1248,7 +1387,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const onProduct = !!document.getElementById("product-name");
     const onCart    = !!document.getElementById("cart-items-list");
 
-    if (onHome)    { renderNewArrivals(); renderBrandTiles(); renderTrendingShoes(); }
+    if (onHome)    { renderNewArrivals(); renderBrandTiles(); initCategoryScroll(); renderTrendingShoes(); }
     if (onBrand)   renderBrandPage();
     if (onProduct) { loadSizeUnit().then(loadProductPage); }
     if (onCart)    renderCartPage();
