@@ -1002,138 +1002,139 @@ function getSizeLabel(size) {
 /* =================================================
    CATEGORY QUICK LINKS — infinite drag scroll
 ================================================= */
+// Categories defined per-button (slug matches site_settings key)
 const CATEGORIES = [
-    { label: "Boots",      slug: "boots",      logo: "/static/logo/categories/boots.png",     emoji: "👢", url: "/brand?tag=boots"        },
-    { label: "Crocs",      slug: "crocs",      logo: "/static/logo/categories/crocs.png",     emoji: "🥿", url: "/brand?tag=crocs"        },
-    { label: "Girls",      slug: "girls",      logo: "/static/logo/categories/girls.png",     emoji: "👟", url: "/brand?tag=girls"        },
-    { label: "Sale",       slug: "sale",       logo: "/static/logo/categories/sale.png",      emoji: "🏷️", url: "/brand?tag=sale"         },
-    { label: "Under 1000", slug: "under1000",  logo: "/static/logo/categories/under1000.png", emoji: "💰", url: "/brand?max_price=1000"   },
-    { label: "Under 1500", slug: "under1500",  logo: "/static/logo/categories/under1500.png", emoji: "💸", url: "/brand?max_price=1500"   },
-    { label: "Under 2500", slug: "under2500",  logo: "/static/logo/categories/under2500.png", emoji: "🛍️", url: "/brand?max_price=2500"   },
-    { label: "New",        slug: "new",        logo: "/static/logo/categories/new.png",       emoji: "✨", url: "/brand?tag=new"          },
+    { label:"Boots",      slug:"boots",      emoji:"👢", url:"/brand?tag=boots"      },
+    { label:"Crocs",      slug:"crocs",      emoji:"🥿", url:"/brand?tag=crocs"      },
+    { label:"Girls",      slug:"girls",      emoji:"👟", url:"/brand?tag=girls"      },
+    { label:"Sale",       slug:"sale",       emoji:"🏷️", url:"/brand?sale=1"         },
+    { label:"Under 1000", slug:"under1000",  emoji:"💰", url:"/brand?max_price=1000"  },
+    { label:"Under 1500", slug:"under1500",  emoji:"💸", url:"/brand?max_price=1500"  },
+    { label:"Under 2500", slug:"under2500",  emoji:"🛍️", url:"/brand?max_price=2500"  },
+    { label:"New",        slug:"new",        emoji:"✨", url:"/brand?tag=new"         },
 ];
 
-function buildCatBtn(cat) {
-    const btn = document.createElement("a");
-    btn.className = "cat-btn";
-    btn.href = cat.url;
+function buildCatCard(cat) {
+    const a = document.createElement("a");
+    a.className    = "na-cat-card";   // reuse new-arrivals card sizing
+    a.href         = cat.url;
+    a.draggable    = false;
+
+    const imgWrap  = document.createElement("div");
+    imgWrap.className = "na-cat-img-wrap";
 
     const img = document.createElement("img");
-    img.className = "cat-btn-logo";
-    img.alt = cat.label;
-    img.loading = "lazy";
-    img.src = cat.logo;
-    img.onerror = function() {
-        // Fallback to emoji if logo missing
+    img.src       = "/static/logo/categories/" + cat.slug + ".png";
+    img.alt       = cat.label;
+    img.loading   = "lazy";
+    img.className = "na-cat-logo";
+    img.onerror   = function() {
         this.style.display = "none";
         const em = document.createElement("span");
-        em.className = "cat-btn-emoji";
+        em.className = "na-cat-emoji";
         em.textContent = cat.emoji;
-        btn.insertBefore(em, this.nextSibling);
+        imgWrap.appendChild(em);
     };
+    imgWrap.appendChild(img);
 
     const lbl = document.createElement("span");
-    lbl.className = "cat-btn-label";
+    lbl.className   = "na-cat-label";
     lbl.textContent = cat.label;
 
-    btn.appendChild(img);
-    btn.appendChild(lbl);
-    return btn;
+    a.appendChild(imgWrap);
+    a.appendChild(lbl);
+    return a;
 }
 
-function initCategoryScroll() {
-    const outer = document.getElementById("cat-scroll-outer");
+async function initCategoryScroll() {
+    const wrap  = document.getElementById("cat-scroll-outer");
     const track = document.getElementById("cat-track");
-    if (!outer || !track) return;
+    if (!wrap || !track) return;
 
-    // Fill track with items × 2 for seamless loop
-    // (CSS animation moves by -50% which brings us back to start)
-    const allCats = [...CATEGORIES, ...CATEGORIES];
-    allCats.forEach(cat => track.appendChild(buildCatBtn(cat)));
-
-    // ── Drag-to-scroll (mouse) with velocity ──────────────────────────────────
-    let isDown   = false;
-    let startX   = 0;
-    let scrollLeft = 0;
-    let velX     = 0;
-    let lastX    = 0;
-    let lastTime = 0;
-    let rafId    = null;
-
-    outer.addEventListener("mousedown", e => {
-        isDown = true;
-        startX = e.pageX - outer.offsetLeft;
-        scrollLeft = outer.scrollLeft;
-        lastX = e.pageX;
-        lastTime = Date.now();
-        velX = 0;
-        outer.classList.add("dragging");
-        cancelAnimationFrame(rafId);
-    });
-
-    window.addEventListener("mousemove", e => {
-        if (!isDown) return;
-        const x    = e.pageX - outer.offsetLeft;
-        const walk = x - startX;
-        outer.scrollLeft = scrollLeft - walk;
-        // Track velocity
-        const now = Date.now();
-        velX = (e.pageX - lastX) / Math.max(1, now - lastTime) * 16;
-        lastX = e.pageX;
-        lastTime = now;
-    });
-
-    window.addEventListener("mouseup", () => {
-        if (!isDown) return;
-        isDown = false;
-        outer.classList.remove("dragging");
-        // Momentum glide
-        function glide() {
-            if (Math.abs(velX) < 0.5) return;
-            outer.scrollLeft -= velX;
-            velX *= 0.92;
-            rafId = requestAnimationFrame(glide);
+    // Load which buttons are enabled from site settings
+    let enabled = {};
+    try {
+        const res  = await fetch("/api/site-settings");
+        const cfg  = await res.json();
+        if (cfg.show_categories === false) {
+            const section = document.getElementById("cat-scroll-section");
+            if (section) section.style.display = "none";
+            return;
         }
-        glide();
-    });
-
-    // Prevent click after drag
-    outer.addEventListener("click", e => {
-        if (Math.abs(outer.scrollLeft - scrollLeft) > 6) e.preventDefault();
-    });
-
-    // ── Infinite scroll loop — reset position when halfway ────────────────────
-    // The CSS animation handles visual loop; for drag we reset scrollLeft
-    function loopCheck() {
-        if (!isDown) {
-            const half = track.scrollWidth / 2;
-            if (outer.scrollLeft >= half)  outer.scrollLeft -= half;
-            if (outer.scrollLeft <= 0)     outer.scrollLeft += half;
-        }
-        requestAnimationFrame(loopCheck);
+        CATEGORIES.forEach(c => { enabled[c.slug] = cfg["cat_" + c.slug] !== false; });
+    } catch(e) {
+        CATEGORIES.forEach(c => { enabled[c.slug] = true; });
     }
-    // Only loop-check on drag (CSS handles the auto-scroll loop)
-    outer.addEventListener("scroll", () => {
-        if (!isDown) return;
-        const half = track.scrollWidth / 2;
-        if (outer.scrollLeft >= half)  outer.scrollLeft -= half;
-        if (outer.scrollLeft <= 0)     outer.scrollLeft  += half;
-    }, { passive: true });
 
-    // ── Touch: native scroll + loop reset ─────────────────────────────────────
-    let touchStartX = 0;
-    outer.addEventListener("touchstart", e => {
-        touchStartX = e.touches[0].clientX;
-        outer.classList.add("dragging");
+    const visible = CATEGORIES.filter(c => enabled[c.slug]);
+    if (visible.length === 0) {
+        const section = document.getElementById("cat-scroll-section");
+        if (section) section.style.display = "none";
+        return;
+    }
+
+    // Build track — duplicate for seamless loop feel (used with drag, not CSS anim)
+    const all = [...visible, ...visible];
+    track.innerHTML = "";
+    all.forEach(cat => track.appendChild(buildCatCard(cat)));
+
+    // ── Drag-to-scroll with momentum (same as New Arrivals) ──────────────────
+    let isDragging = false, startX = 0, scrollStart = 0, velX = 0, lastX = 0, lastT = 0, rafId = null;
+
+    wrap.addEventListener("mousedown", e => {
+        isDragging = true;
+        startX = e.pageX; scrollStart = wrap.scrollLeft;
+        lastX = e.pageX; lastT = Date.now(); velX = 0;
+        wrap.classList.add("dragging");
         cancelAnimationFrame(rafId);
+    });
+    window.addEventListener("mousemove", e => {
+        if (!isDragging) return;
+        wrap.scrollLeft = scrollStart - (e.pageX - startX);
+        const now = Date.now();
+        velX = (e.pageX - lastX) / Math.max(1, now - lastT) * 16;
+        lastX = e.pageX; lastT = now;
+    });
+    window.addEventListener("mouseup", () => {
+        if (!isDragging) return;
+        isDragging = false;
+        wrap.classList.remove("dragging");
+        (function glide() {
+            if (Math.abs(velX) < 0.5) return;
+            wrap.scrollLeft -= velX; velX *= 0.92;
+            rafId = requestAnimationFrame(glide);
+        })();
+    });
+
+    // Prevent tap-as-click after drag
+    let _catDragDist = 0;
+    wrap.addEventListener("mousedown", e => { _catDragDist = 0; });
+    window.addEventListener("mousemove", e => { if (isDragging) _catDragDist += Math.abs(e.movementX); });
+    wrap.addEventListener("click", e => { if (_catDragDist > 6) e.preventDefault(); }, true);
+
+    // Touch: native scroll
+    let touchX0 = 0;
+    wrap.addEventListener("touchstart", e => { touchX0 = e.touches[0].clientX; }, { passive: true });
+    wrap.addEventListener("touchend", e => {
+        const delta = Math.abs(e.changedTouches[0].clientX - touchX0);
+        if (delta > 8) {
+            wrap.querySelectorAll(".na-cat-card").forEach(c => {
+                c.style.pointerEvents = "none";
+                setTimeout(() => c.style.pointerEvents = "", 200);
+            });
+        }
+        // Loop reset when dragged past halfway
+        const half = track.scrollWidth / 2;
+        if (wrap.scrollLeft >= half) wrap.scrollLeft -= half;
+        if (wrap.scrollLeft <= 0)   wrap.scrollLeft += half;
     }, { passive: true });
 
-    outer.addEventListener("touchend", e => {
-        outer.classList.remove("dragging");
-        // Loop reset
+    // Mouse loop reset
+    wrap.addEventListener("scroll", () => {
+        if (!isDragging) return;
         const half = track.scrollWidth / 2;
-        if (outer.scrollLeft >= half)  outer.scrollLeft -= half;
-        if (outer.scrollLeft <= 0)     outer.scrollLeft += half;
+        if (wrap.scrollLeft >= half) wrap.scrollLeft -= half;
+        if (wrap.scrollLeft <= 0)   wrap.scrollLeft += half;
     }, { passive: true });
 }
 
