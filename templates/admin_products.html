@@ -457,6 +457,9 @@
                 <option value="trending">Trending</option>
                 <option value="new">New</option>
                 <option value="sale">Sale</option>
+                <option value="boots">Boots</option>
+                <option value="crocs">Crocs</option>
+                <option value="girls">Girls</option>
                 <option value="luxury">Luxury</option>
             </select>
         </div>
@@ -693,12 +696,16 @@ function openEditModal(product) {
     currentBrand = product.brand;
     document.getElementById("modal-overlay").classList.add("open");
 
+    // Store reference for inventory rebuild on unit change
+    _lastEditedProduct = product;
     // Build inventory grid after modal is open (uses sizes + colors set above)
-    setTimeout(() => buildInventoryGrid(product), 50);
+    // Also wait for initSizeUnit to resolve so labels use the correct unit
+    setTimeout(() => buildInventoryGrid(product), 80);
 }
 
 function closeModal() {
     document.getElementById("modal-overlay").classList.remove("open");
+    _lastEditedProduct = null;
 }
 
 function handleOverlayClick(e) {
@@ -1008,15 +1015,20 @@ async function setAllStock() {
 
 
 /* ── SIZE UNIT PREFERENCE ── */
-let _adminSizeUnit = "both";
+let _adminSizeUnit = "uk";
+let _lastEditedProduct = null;  // for inventory rebuild on unit change
 
 async function initSizeUnit() {
     try {
         const res  = await fetch("/api/x9k2/site-settings", { credentials: "include" });
         const data = await res.json();
-        _adminSizeUnit = data.size_unit || "both";
+        _adminSizeUnit = (data.size_unit === "euro") ? "euro" : "uk";
         applySizeUnit(_adminSizeUnit);
-    } catch(e) { applySizeUnit("both"); }
+        // Rebuild inventory grid if modal is already open with a product
+        if (_lastEditedProduct && document.getElementById("modal-overlay")?.classList.contains("open")) {
+            buildInventoryGrid(_lastEditedProduct);
+        }
+    } catch(e) { applySizeUnit("uk"); }
 }
 
 function applySizeUnit(unit) {
@@ -1037,13 +1049,17 @@ async function setSizeUnit(unit) {
     applySizeUnit(unit);
     // Clear all size selections when switching units to avoid cross-unit confusion
     document.querySelectorAll(".size-chip.selected").forEach(c => c.classList.remove("selected"));
+    // Immediately rebuild inventory grid with new unit labels
+    if (_lastEditedProduct) {
+        buildInventoryGrid(_lastEditedProduct);
+    }
     try {
         await fetch("/api/x9k2/site-settings", {
             method: "POST", credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ size_unit: unit })
         });
-        showToast("✅ Size unit set to " + unit.toUpperCase() + " — please reselect sizes");
+        showToast("✅ Size unit: " + unit.toUpperCase() + " — please reselect sizes");
     } catch(e) {
         showToast("Saved locally — sync may fail", false);
     }
