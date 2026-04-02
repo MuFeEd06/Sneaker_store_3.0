@@ -436,22 +436,6 @@
         </div>
     </section>
 
-    {% if site_settings.show_new_arrivals != False %}
-    <section class="new-arrivals-section fade-in" id="new-arrivals">
-        <div class="new-arrivals-header">
-            <a href="/brand?tag=new" class="new-arrivals-title-link">
-                <h2 class="section-title new-arrivals-title">
-                    New Arrivals
-                    <span class="new-arrivals-arrow">→</span>
-                </h2>
-            </a>
-        </div>
-        <div class="new-arrivals-track-wrap" id="new-arrivals-wrap">
-            <div class="new-arrivals-track" id="new-arrivals-track"></div>
-        </div>
-    </section>
-    {% endif %}
-
     {% if site_settings.show_brands_section != False %}
     <section class="collections-section fade-in" id="collections"
              data-hidden-brands="{{ site_settings.hidden_brands or '' }}">
@@ -459,6 +443,15 @@
         <div class="brand-tiles-grid" id="brand-tiles-grid"></div>
     </section>
     {% endif %}
+
+    <!-- ── CATEGORY QUICK LINKS ── -->
+    <div class="cat-scroll-section" id="cat-scroll-section">
+        <div class="cat-scroll-outer" id="cat-scroll-outer">
+            <div class="cat-track" id="cat-track">
+                <!-- Filled by JS — duplicated for infinite loop -->
+            </div>
+        </div>
+    </div>
 
     <section id="shop" class="shop-section fade-in">
         <h2 class="section-title">Trending Shoes</h2>
