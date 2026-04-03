@@ -1145,7 +1145,7 @@ footer {
    CATEGORY QUICK LINKS — infinite horizontal scroll
 ================================================= */
 .cat-scroll-section {
-    padding: 24px 0 8px;
+    padding: 40px 0 8px;
     overflow: hidden;
     position: relative;
 }
@@ -1170,6 +1170,7 @@ footer {
 }
 
 .cat-scroll-outer {
+    padding: 4px 5% 20px;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
