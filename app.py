@@ -514,14 +514,23 @@ def get_products():
     max_price = request.args.get("max_price", type=int)
     search    = request.args.get("q", "").lower().strip()
     sale      = request.args.get("sale")
+    category  = request.args.get("category")
+    # boots/crocs/girls can be passed as ?tag= (legacy) or ?category=
+    CATEGORY_TAGS = {"boots", "crocs", "girls"}
     if brand:     query = query.filter(db.func.lower(Product.brand) == brand.lower())
-    if tag:       query = query.filter(Product.tag == tag)
+    if tag:
+        if tag in CATEGORY_TAGS:
+            # Filter by category column for these
+            query = query.filter(Product.category == tag)
+        else:
+            query = query.filter(Product.tag == tag)
+    if category:  query = query.filter(Product.category == category)
     if min_price: query = query.filter(Product.price >= min_price)
     if max_price: query = query.filter(Product.price <= max_price)
     if sale:      query = query.filter(Product.original_price > Product.price, Product.original_price > 0)
     if search:    query = query.filter(db.or_(
         Product.name.ilike(f"%{search}%"), Product.brand.ilike(f"%{search}%")))
-    return jsonify(fix_image_paths([p.to_dict() for p in query.all()]))
+    return jsonify(fix_image_paths([p.to_dict() for p in query.distinct(Product.id).all()]))
 
 @app.route("/api/products/trending")
 def get_trending():
@@ -589,6 +598,18 @@ def api_add_product():
     price = int(data.get("price", 0))
     if not name or not brand or not price:
         return jsonify({"error": "name, brand and price are required"}), 400
+
+    # Dedup guard — prevent double-submit from creating duplicate rows
+    existing = Product.query.filter(
+        db.func.lower(Product.name)  == name.lower(),
+        db.func.lower(Product.brand) == brand.lower(),
+        Product.price == price
+    ).first()
+    if existing:
+        # Return the existing product instead of creating a duplicate
+        return jsonify({"success": True, "product": existing.to_dict(),
+                        "note": "Product already exists — returning existing"}), 200
+
     p = Product(name=name, brand=brand, price=price,
                 image=data.get("image",""), tag=data.get("tag",""),
                 sizes=json.dumps(data.get("sizes",[])),
@@ -610,6 +631,12 @@ def api_add_product():
         if hasattr(p, 'original_price'):
             op = int(data.get("original_price") or 0)
             p.original_price = op if op > 0 else 0
+    except Exception:
+        pass
+    # category field (boots / crocs / girls)
+    try:
+        if hasattr(p, 'category'):
+            p.category = data.get("category", "")
     except Exception:
         pass
     db.session.add(p)
@@ -651,6 +678,12 @@ def api_update_product(product_id):
                 p.original_price = op if op > 0 else 0
         except Exception as e:
             print(f"[calvac] original_price update skipped: {e}")
+    if "category" in data:
+        try:
+            if hasattr(p, 'category'):
+                p.category = data.get("category", "")
+        except Exception as e:
+            print(f"[calvac] category update skipped: {e}")
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()})
 
