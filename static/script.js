@@ -795,11 +795,14 @@ async function renderBrandPage() {
             }
             document.title = `${searchQ} — CALVAC`;
         } else if (params.get("tag")) {
-            // Tag filter: boots, crocs, girls, new, sale, trending, luxury
-            const tag     = params.get("tag");
-            const tagLabel= { boots:"Boots", crocs:"Crocs", girls:"Girls", new:"New Arrivals",
-                              sale:"Sale", trending:"Trending", luxury:"Luxury" }[tag] || tag;
-            filtered  = products.filter(p => p.tag === tag);
+            // Tag filter — boots/crocs/girls use category field; others use tag field
+            const tag       = params.get("tag");
+            const tagLabel  = { boots:"Boots", crocs:"Crocs", girls:"Girls", new:"New Arrivals",
+                                sale:"Sale", trending:"Trending", luxury:"Luxury" }[tag] || tag;
+            const CAT_TAGS  = new Set(["boots","crocs","girls"]);
+            filtered = CAT_TAGS.has(tag)
+                ? products.filter(p => p.category === tag)   // category column
+                : products.filter(p => p.tag === tag);        // tag column
             pageTitle = tagLabel;
             document.title = `${tagLabel} — CALVAC`;
             if (titleEl)      titleEl.textContent      = tagLabel;
