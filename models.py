@@ -62,6 +62,7 @@ class Product(db.Model):
             "total_stock":    sum(stock.values()) if stock else None,
             "out_of_stock":   self.is_out_of_stock() if stock else False,
             "specs":          self.specs or "",
+            "original_price": self.original_price or 0,
             "category":       self.category or "",
         }
 
