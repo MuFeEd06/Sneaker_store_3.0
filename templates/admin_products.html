@@ -457,10 +457,17 @@
                 <option value="trending">Trending</option>
                 <option value="new">New</option>
                 <option value="sale">Sale</option>
+                <option value="luxury">Luxury</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Category</label>
+            <select id="f-category">
+                <option value="">None</option>
                 <option value="boots">Boots</option>
                 <option value="crocs">Crocs</option>
                 <option value="girls">Girls</option>
-                <option value="luxury">Luxury</option>
             </select>
         </div>
 
@@ -692,6 +699,8 @@ function openEditModal(product) {
     // Specifications
     const spEl = document.getElementById("f-specs");
     if (spEl) spEl.value = product.specs || "";
+    const fcEl = document.getElementById("f-category");
+    if (fcEl) fcEl.value = product.category || "";
 
     currentBrand = product.brand;
     document.getElementById("modal-overlay").classList.add("open");
@@ -717,6 +726,7 @@ function resetForm() {
         document.getElementById(id).value = "";
     });
     document.getElementById("f-tag").value               = "";
+    document.getElementById("f-category").value          = "";
     document.getElementById("f-image-path").textContent  = "";
     document.getElementById("f-image-preview").style.display = "none";
     document.querySelectorAll(".size-chip").forEach(c => c.classList.remove("selected"));
@@ -853,7 +863,11 @@ function getColorRows() {
 }
 
 /* ── SAVE PRODUCT ── */
+let _isSaving = false;  // guard against double-submit
+
 async function saveProduct() {
+    if (_isSaving) return;  // block second click
+
     const name  = document.getElementById("f-name").value.trim();
     const brand = document.getElementById("f-brand").value.trim();
     const price = parseInt(document.getElementById("f-price").value);
@@ -862,7 +876,11 @@ async function saveProduct() {
         showToast("Name, brand and price are required", false); return;
     }
 
-    // Collect stock data if inventory grid exists
+    // Disable button visually
+    const saveBtn = document.querySelector(".modal-footer .btn-save");
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Saving…"; }
+    _isSaving = true;
+
     const stockData = (typeof collectStockData === "function") ? collectStockData() : {};
 
     const payload = {
@@ -874,6 +892,7 @@ async function saveProduct() {
         stock:          stockData,
         specs:          document.getElementById("f-specs")?.value || "",
         original_price: parseInt(document.getElementById("f-original-price")?.value) || 0,
+        category:       document.getElementById("f-category")?.value || "",
     };
 
     const url    = editingId ? `/api/x9k2/products/${editingId}` : "/api/x9k2/products";
@@ -901,12 +920,19 @@ async function saveProduct() {
         }
     } catch(e) {
         showToast("Network error — try again", false);
+    } finally {
+        // Re-enable button regardless of outcome
+        _isSaving = false;
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Save Product"; }
     }
 }
 
 /* ── DELETE PRODUCT ── */
 async function deleteProduct(id, name) {
     if (!confirm(`Delete "${name}"?\n\nThis cannot be undone.`)) return;
+
+    const delBtn = document.querySelector(`.delete-btn[data-id="${id}"]`);
+    if (delBtn) { delBtn.disabled = true; delBtn.style.opacity = "0.5"; }
 
     try {
         const res  = await fetch(`/api/x9k2/products/${id}`, {
