@@ -24,8 +24,11 @@ class Product(db.Model):
     stock   = db.Column(db.Text, nullable=True, default="{}")
     # ── SPECIFICATIONS ────────────────────────────────────────────
     # Plain text, "Key: Value" per line
-    specs    = db.Column(db.Text,      nullable=True, default="")
-    category = db.Column(db.String(50), nullable=True, default="")
+    specs          = db.Column(db.Text,      nullable=True, default="")
+    # ── OFFER / SALE PRICE ────────────────────────────────────────
+    original_price = db.Column(db.Integer,   nullable=True, default=0)
+    # ── CATEGORY (boots / crocs / girls) ─────────────────────────
+    category       = db.Column(db.String(50), nullable=True, default="")
 
     def get_stock(self):
         try: return json.loads(self.stock or "{}")
