@@ -44,21 +44,25 @@
     </header>
 
     {% if site_settings.offer and site_settings.offer.active and site_settings.offer.text %}
+    <style>
+        @keyframes ribbonScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+        .ribbon-track{display:flex;width:max-content;animation:ribbonScroll 22s linear infinite;align-items:center;}
+        .ribbon-item{display:inline-flex;align-items:center;gap:10px;padding:0 36px;font-size:0.88rem;font-weight:700;letter-spacing:0.3px;white-space:nowrap;flex-shrink:0;}
+        .ribbon-logo{height:20px;width:auto;object-fit:contain;opacity:0.88;vertical-align:middle;}
+        .ribbon-sep{opacity:0.35;}
+    </style>
     <div id="offer-ribbon" style="background:{{ site_settings.offer.bg_color }};color:{{ site_settings.offer.text_color }};padding:8px 0;overflow:hidden;position:relative;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-        <div style="display:inline-flex;align-items:center;animation:ribbonScroll 20s linear infinite;white-space:nowrap;">
-            {% for i in range(8) %}
-            <span style="display:inline-flex;align-items:center;gap:10px;padding:0 40px;font-size:0.88rem;font-weight:700;letter-spacing:0.3px;">
+        <div class="ribbon-track">
+            {% for i in range(12) %}
+            <span class="ribbon-item">
                 {% if site_settings.offer.show_logo %}
-                <img src="{{ url_for('static', filename='logo/logo.png') }}"
-                     alt="Logo"
-                     style="height:22px;width:auto;object-fit:contain;opacity:0.9;vertical-align:middle;">
+                <img src="{{ url_for('static', filename='logo/logo.png') }}" class="ribbon-logo" alt="">
                 {% endif %}
                 {{ site_settings.offer.text }}
-                <span style="opacity:0.35;">✦</span>
+                <span class="ribbon-sep">✦</span>
             </span>
             {% endfor %}
         </div>
-        <style>@keyframes ribbonScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}</style>
     </div>
     {% endif %}
 

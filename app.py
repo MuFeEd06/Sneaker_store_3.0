@@ -156,13 +156,18 @@ def ensure_db():
 # ── HELPERS ───────────────────────────────────────────────────────────────────
 
 def get_offer():
+    _blank = {"active": False, "text": "", "bg_color": "#FF6B35",
+              "text_color": "#ffffff", "show_logo": False}
     if not USE_DB:
-        return {"active": False, "text": "", "bg_color": "#FF6B35", "text_color": "#ffffff"}
+        return _blank
     try:
         row = Setting.query.get("offer")
-        if row: return json.loads(row.value)
+        if row:
+            saved = json.loads(row.value)
+            saved.setdefault("show_logo", False)
+            return saved
     except: pass
-    return {"active": False, "text": "", "bg_color": "#FF6B35", "text_color": "#ffffff"}
+    return _blank
 
 def set_offer(data):
     row = Setting.query.get("offer")
