@@ -23,10 +23,9 @@ class Product(db.Model):
     # ── INVENTORY ────────────────────────────────────────────────
     stock   = db.Column(db.Text, nullable=True, default="{}")
     # ── SPECIFICATIONS ────────────────────────────────────────────
-    specs          = db.Column(db.Text,    nullable=True, default="")
-    # ── OFFER / SALE PRICE ────────────────────────────────────────
-    # original_price = the crossed-out MRP. 0 or None means no offer.
-    original_price = db.Column(db.Integer, nullable=True, default=0)
+    # Plain text, "Key: Value" per line
+    specs    = db.Column(db.Text,      nullable=True, default="")
+    category = db.Column(db.String(50), nullable=True, default="")
 
     def get_stock(self):
         try: return json.loads(self.stock or "{}")
@@ -64,6 +63,7 @@ class Product(db.Model):
             "out_of_stock":   self.is_out_of_stock() if stock else False,
             "specs":          self.specs or "",
             "original_price": self.original_price or 0,
+            "category":       self.category or "",
         }
 
 
