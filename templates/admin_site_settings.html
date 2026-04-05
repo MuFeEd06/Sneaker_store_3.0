@@ -306,15 +306,15 @@
     <div class="panel">
         <div class="panel-title">📄 Policy Pages</div>
         <p style="font-size:0.85rem;color:#5a6a7a;margin-bottom:20px;">
-            These pages are live at <code>/privacy</code>, <code>/refund</code>, <code>/shipping</code>.
+            These pages are live at <code>/privacy</code>, <code>/return</code>, <code>/shipping</code>.
             Use plain text or simple markdown (# heading, ## subheading, **bold**, - list item).
         </p>
 
         <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
             <button type="button" onclick="showPolicy('privacy')"
                     id="ptab-privacy" class="size-type-btn active">Privacy Policy</button>
-            <button type="button" onclick="showPolicy('refund')"
-                    id="ptab-refund" class="size-type-btn">Refund Policy</button>
+            <button type="button" onclick="showPolicy('return')"
+                    id="ptab-return" class="size-type-btn">Return Policy</button>
             <button type="button" onclick="showPolicy('shipping')"
                     id="ptab-shipping" class="size-type-btn">Shipping Policy</button>
         </div>
@@ -326,12 +326,12 @@
                        background:#f4f8fb;color:#1a1a2e;line-height:1.6;"
                 placeholder="# Privacy Policy&#10;&#10;Your privacy is important to us..."></textarea>
         </div>
-        <div id="policy-editor-refund" style="display:none;">
-            <textarea id="ss-policy-refund" rows="10"
+        <div id="policy-editor-return" style="display:none;">
+            <textarea id="ss-policy-return" rows="10"
                 style="width:100%;padding:12px;border:1.5px solid #d0e6f5;border-radius:8px;
                        font-size:0.88rem;font-family:inherit;outline:none;resize:vertical;
                        background:#f4f8fb;color:#1a1a2e;line-height:1.6;"
-                placeholder="# Refund Policy&#10;&#10;We accept returns within 7 days..."></textarea>
+                placeholder="# Return Policy&#10;&#10;We accept returns within 7 days..."></textarea>
         </div>
         <div id="policy-editor-shipping" style="display:none;">
             <textarea id="ss-policy-shipping" rows="10"
@@ -344,7 +344,7 @@
         <div style="font-size:0.75rem;color:#9badb8;margin-top:10px;">
             Tip: Use # for main heading, ## for subheadings, **bold text**, - for bullet points.
             View live: <a href="/privacy" target="_blank" style="color:#2B9FD8;">/privacy</a>
-            · <a href="/refund" target="_blank" style="color:#2B9FD8;">/refund</a>
+            · <a href="/return" target="_blank" style="color:#2B9FD8;">/return</a>
             · <a href="/shipping" target="_blank" style="color:#2B9FD8;">/shipping</a>
         </div>
 
@@ -506,7 +506,7 @@ async function loadSettings() {
 
         // Policy pages
         if (s.policy_privacy)  document.getElementById('ss-policy-privacy').value  = s.policy_privacy;
-        if (s.policy_refund)   document.getElementById('ss-policy-refund').value   = s.policy_refund;
+        if (s.policy_return)   document.getElementById('ss-policy-return').value   = s.policy_return;
         if (s.policy_shipping) document.getElementById('ss-policy-shipping').value  = s.policy_shipping;
 
     } catch(e) {
@@ -642,7 +642,7 @@ async function uploadModel(input) {
 /* ── POLICY EDITOR ── */
 let _activePolicy = "privacy";
 function showPolicy(type) {
-    ["privacy","refund","shipping"].forEach(t => {
+    ["privacy","return","shipping"].forEach(t => {
         document.getElementById("policy-editor-" + t).style.display = t === type ? "" : "none";
         document.getElementById("ptab-" + t).classList.toggle("active", t === type);
     });
@@ -654,7 +654,7 @@ function showPolicy(type) {
 async function savePolicies() {
     await apiSave({
         policy_privacy:  document.getElementById("ss-policy-privacy").value,
-        policy_refund:   document.getElementById("ss-policy-refund").value,
+        policy_return:   document.getElementById("ss-policy-return").value,
         policy_shipping: document.getElementById("ss-policy-shipping").value,
     }, "✅ Policies saved!");
 }

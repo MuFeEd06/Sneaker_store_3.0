@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{{ title }} — Claxxic India{% endblock %}
+{% block title %}{{ title }} — CALVAC{% endblock %}
 
 {% block content %}
 <header>
     <div class="logo-container">
         <a href="/" style="text-decoration:none;">
-            <h1 class="logo">Claxxic India</h1>
+            <h1 class="logo">CALVAC</h1>
         </a>
         <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Sneaker Logo">
     </div>
@@ -83,7 +83,7 @@
 <main class="policy-page">
     <nav class="policy-nav">
         <a href="/privacy"  class="{{ 'active' if active == 'privacy'  else '' }}">Privacy Policy</a>
-        <a href="/refund"   class="{{ 'active' if active == 'refund'   else '' }}">Refund Policy</a>
+        <a href="/return"   class="{{ 'active' if active == 'return'   else '' }}">Return Policy</a>
         <a href="/shipping" class="{{ 'active' if active == 'shipping' else '' }}">Shipping Policy</a>
     </nav>
     <div class="policy-body" id="policy-content">
