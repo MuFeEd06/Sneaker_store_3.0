@@ -1,5 +1,5 @@
 """
-Claxxic India — Flask Backend (Vercel + Supabase Edition)
+CALVAC — Flask Backend (Vercel + Supabase Edition)
 Key fix: DB init is lazy (before_request) not at import time — required for Vercel serverless
 """
 
@@ -58,7 +58,7 @@ _secret = os.environ.get("SECRET_KEY", "")
 if not _secret or _secret == "claxxic-secret-2026":
     import secrets as _sec
     _secret = _sec.token_hex(32)  # random per cold start — sessions won't survive restarts
-    print("[claxxic] ⚠️  SECRET_KEY not set — using random key. Set SECRET_KEY env var in Vercel!")
+    print("[calvac] ⚠️  SECRET_KEY not set — using random key. Set SECRET_KEY env var in Vercel!")
 app.config["SECRET_KEY"] = _secret
 app.config["SESSION_COOKIE_SECURE"]          = True
 app.config["SESSION_COOKIE_HTTPONLY"]        = True
@@ -147,27 +147,22 @@ def ensure_db():
     _db_ready = True
     try:
         db.create_all()
-        print("[claxxic] ✅ DB tables ready")
+        print("[calvac] ✅ DB tables ready")
     except Exception as e:
-        print(f"[claxxic] ❌ DB init failed: {e}")
+        print(f"[calvac] ❌ DB init failed: {e}")
         USE_DB = False
 
 
 # ── HELPERS ───────────────────────────────────────────────────────────────────
 
 def get_offer():
-    _blank = {"active": False, "text": "", "bg_color": "#FF6B35",
-              "text_color": "#ffffff", "show_logo": False}
     if not USE_DB:
-        return _blank
+        return {"active": False, "text": "", "bg_color": "#FF6B35", "text_color": "#ffffff"}
     try:
         row = Setting.query.get("offer")
-        if row:
-            saved = json.loads(row.value)
-            saved.setdefault("show_logo", False)
-            return saved
+        if row: return json.loads(row.value)
     except: pass
-    return _blank
+    return {"active": False, "text": "", "bg_color": "#FF6B35", "text_color": "#ffffff"}
 
 def set_offer(data):
     row = Setting.query.get("offer")
@@ -243,7 +238,19 @@ DEFAULT_SITE_SETTINGS = {
     # Brand section visibility
     "hidden_brands": "",
     "show_brands_section": True,
-    "size_unit": "both",
+    # New Arrivals section
+    "show_new_arrivals": True,
+    # Category quick links section
+    "show_categories": True,
+    "cat_boots":       True,
+    "cat_crocs":       True,
+    "cat_girls":       True,
+    "cat_sale":        True,
+    "cat_under1000":   True,
+    "cat_under1500":   True,
+    "cat_under2500":   True,
+    "cat_new":         True,
+    "size_unit": "uk",   # "uk" or "euro" — no both option
     # Policy pages content (markdown/HTML stored as plain text)
     "policy_privacy":  "# Privacy Policy\n\nYour privacy is important to us. We do not share your personal data with third parties.",
     "policy_refund":   "# Refund Policy\n\nWe accept returns within 7 days of delivery. Items must be unused and in original packaging.",
@@ -284,13 +291,14 @@ def get_site_settings():
         row = Setting.query.get("site_settings")
         if row and row.value:
             saved = json.loads(row.value)
-            # Merge: saved values override defaults
-            # Only skip None — empty string "" is valid (user cleared a field intentionally)
             for k, v in saved.items():
                 if v is not None:
                     defaults[k] = v
+            # Normalise legacy "both" → "uk" (we removed the both option)
+            if defaults.get("size_unit") == "both":
+                defaults["size_unit"] = "uk"
     except Exception as e:
-        print(f"[claxxic] get_site_settings parse error: {e}")
+        print(f"[calvac] get_site_settings parse error: {e}")
     defaults["offer"] = get_offer()
     defaults["theme"] = _build_theme(defaults.get("primary_color","#2B9FD8"))
     return defaults
@@ -306,6 +314,9 @@ def save_site_settings(data):
             existing = {}
     # Merge: new data overrides existing, skip "offer" key
     merged = {**existing, **{k: v for k, v in data.items() if k != "offer"}}
+    # Normalise: no "both" size_unit — treat as "uk"
+    if merged.get("size_unit") == "both":
+        merged["size_unit"] = "uk"
     if row:
         row.value = json.dumps(merged)
     else:
@@ -502,10 +513,12 @@ def get_products():
     min_price = request.args.get("min_price", type=int)
     max_price = request.args.get("max_price", type=int)
     search    = request.args.get("q", "").lower().strip()
+    sale      = request.args.get("sale")
     if brand:     query = query.filter(db.func.lower(Product.brand) == brand.lower())
     if tag:       query = query.filter(Product.tag == tag)
     if min_price: query = query.filter(Product.price >= min_price)
     if max_price: query = query.filter(Product.price <= max_price)
+    if sale:      query = query.filter(Product.original_price > Product.price, Product.original_price > 0)
     if search:    query = query.filter(db.or_(
         Product.name.ilike(f"%{search}%"), Product.brand.ilike(f"%{search}%")))
     return jsonify(fix_image_paths([p.to_dict() for p in query.all()]))
@@ -543,7 +556,6 @@ def api_get_offer(): return jsonify(get_offer())
 @app.route("/api/site-settings")
 def api_public_site_settings():
     s = get_site_settings()
-    # Only expose safe fields to public
     return jsonify({
         "primary_color": s.get("primary_color","#2B9FD8"),
         "hero_font":     s.get("hero_font","default"),
@@ -551,6 +563,17 @@ def api_public_site_settings():
         "model_scale":   s.get("model_scale",3.0),
         "model_y":       s.get("model_y",0.8),
         "model_speed":   s.get("model_speed",0.006),
+        "size_unit":         s.get("size_unit","uk"),
+        "show_new_arrivals": s.get("show_new_arrivals", True),
+        "show_categories":  s.get("show_categories", True),
+        "cat_boots":        s.get("cat_boots",     True),
+        "cat_crocs":        s.get("cat_crocs",     True),
+        "cat_girls":        s.get("cat_girls",     True),
+        "cat_sale":         s.get("cat_sale",      True),
+        "cat_under1000":    s.get("cat_under1000", True),
+        "cat_under1500":    s.get("cat_under1500", True),
+        "cat_under2500":    s.get("cat_under2500", True),
+        "cat_new":          s.get("cat_new",       True),
     })
 
 
@@ -614,20 +637,20 @@ def api_update_product(product_id):
             elif hasattr(p, 'stock'):
                 p.stock = json.dumps(data["stock"])
         except Exception as e:
-            print(f"[claxxic] stock update skipped: {e}")
+            print(f"[calvac] stock update skipped: {e}")
     if "specs" in data:
         try:
             if hasattr(p, 'specs'):
                 p.specs = data.get("specs", "")
         except Exception as e:
-            print(f"[claxxic] specs update skipped: {e}")
+            print(f"[calvac] specs update skipped: {e}")
     if "original_price" in data:
         try:
             if hasattr(p, 'original_price'):
                 op = int(data.get("original_price") or 0)
                 p.original_price = op if op > 0 else 0
         except Exception as e:
-            print(f"[claxxic] original_price update skipped: {e}")
+            print(f"[calvac] original_price update skipped: {e}")
     db.session.commit()
     return jsonify({"success": True, "product": p.to_dict()})
 
@@ -667,7 +690,7 @@ def api_upload_image():
         public_url = _supabase_upload(file_bytes, content_type, storage_path)
         return jsonify({"success": True, "path": public_url, "url": public_url})
     except Exception as e:
-        print(f"[claxxic] Upload error: {e}")
+        print(f"[calvac] Upload error: {e}")
         return jsonify({"error": f"Upload failed: {str(e)}"}), 500
 
 @app.route("/api/x9k2/offer", methods=["POST"])
@@ -701,6 +724,10 @@ def api_save_site_settings():
         "tag1_icon","tag1_title","tag1_sub","tag2_icon","tag2_title","tag2_sub",
         "tag3_icon","tag3_title","tag3_sub","tag4_icon","tag4_title","tag4_sub",
         "hidden_brands","show_brands_section",
+        "show_new_arrivals",
+        "show_categories",
+        "cat_boots","cat_crocs","cat_girls","cat_sale",
+        "cat_under1000","cat_under1500","cat_under2500","cat_new",
         "size_unit",
         "policy_privacy","policy_refund","policy_shipping",
     }
@@ -725,7 +752,7 @@ def api_upload_model():
         public_url = _supabase_upload(file_bytes, "model/gltf-binary", storage_path)
         return jsonify({"success": True, "path": public_url, "url": public_url})
     except Exception as e:
-        print(f"[claxxic] Model upload error: {e}")
+        print(f"[calvac] Model upload error: {e}")
         return jsonify({"error": f"Upload failed: {str(e)}"}), 500
 
 
@@ -776,7 +803,7 @@ def _adjust_stock(order, delta):
                 product.set_stock(stock)
         db.session.commit()
     except Exception as e:
-        print(f"[claxxic] Stock adjust error: {e}")
+        print(f"[calvac] Stock adjust error: {e}")
 
 @app.route("/api/orders/<int:order_id>/status", methods=["PATCH"])
 @admin_required
