@@ -488,8 +488,8 @@ def page_return():
     s = get_site_settings()
     return render_template("policy.html",
         title="Return Policy",
-        content=s.get("policy_Return",""),
-        active="Return")
+        content=s.get("policy_return",""),
+        active="return")
 
 @app.route("/shipping")
 def page_shipping():
@@ -767,7 +767,7 @@ def api_save_site_settings():
         "cat_boots","cat_crocs","cat_girls","cat_sale",
         "cat_under1000","cat_under1500","cat_under2500","cat_new",
         "size_unit",
-        "policy_privacy","policy_Return","policy_shipping",
+        "policy_privacy","policy_return","policy_shipping",
     }
     clean = {k: v for k, v in data.items() if k in allowed_keys}
     save_site_settings(clean)
