@@ -157,14 +157,14 @@ def ensure_db():
 
 def get_offer():
     _blank = {"active": False, "text": "", "bg_color": "#FF6B35",
-              "text_color": "#ffffff", "show_logo": False}
+              "text_color": "#ffffff", "show_logo": True}
     if not USE_DB:
         return _blank
     try:
         row = Setting.query.get("offer")
         if row:
             saved = json.loads(row.value)
-            saved.setdefault("show_logo", False)
+            saved.setdefault("show_logo", True)
             return saved
     except: pass
     return _blank
@@ -740,7 +740,7 @@ def api_save_offer():
              "text":      data.get("text","").strip(),
              "bg_color":  data.get("bg_color","#FF6B35"),
              "text_color":data.get("text_color","#ffffff"),
-             "show_logo": bool(data.get("show_logo", False))}
+             "show_logo": bool(data.get("show_logo", True))}
     set_offer(offer)
     return jsonify({"success": True, "offer": offer})
 
