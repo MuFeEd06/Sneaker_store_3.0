@@ -475,6 +475,10 @@ def admin_site_settings_page():
         offer=get_offer())
 
 
+@app.route("/contact")
+def page_contact():
+    return render_template("contact.html")
+
 @app.route("/privacy")
 def page_privacy():
     s = get_site_settings()
