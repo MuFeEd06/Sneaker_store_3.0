@@ -258,7 +258,7 @@ DEFAULT_SITE_SETTINGS = {
     "size_unit": "uk",   # "uk" or "euro" — no both option
     # Policy pages content (markdown/HTML stored as plain text)
     "policy_privacy":  "# Privacy Policy\n\nYour privacy is important to us. We do not share your personal data with third parties.",
-    "policy_refund":   "# Refund Policy\n\nWe accept returns within 7 days of delivery. Items must be unused and in original packaging.",
+    "policy_return":   "# Return Policy\n\nWe accept returns within 7 days of delivery. Items must be unused and in original packaging.",
     "policy_shipping": "# Shipping Policy\n\nWe ship across India. Standard delivery takes 3–7 business days. Free shipping on all orders.",
 }
 
@@ -483,13 +483,13 @@ def page_privacy():
         content=s.get("policy_privacy",""),
         active="privacy")
 
-@app.route("/refund")
-def page_refund():
+@app.route("/return")
+def page_return():
     s = get_site_settings()
     return render_template("policy.html",
-        title="Refund Policy",
-        content=s.get("policy_refund",""),
-        active="refund")
+        title="Return Policy",
+        content=s.get("policy_Return",""),
+        active="Return")
 
 @app.route("/shipping")
 def page_shipping():
@@ -767,7 +767,7 @@ def api_save_site_settings():
         "cat_boots","cat_crocs","cat_girls","cat_sale",
         "cat_under1000","cat_under1500","cat_under2500","cat_new",
         "size_unit",
-        "policy_privacy","policy_refund","policy_shipping",
+        "policy_privacy","policy_Return","policy_shipping",
     }
     clean = {k: v for k, v in data.items() if k in allowed_keys}
     save_site_settings(clean)
