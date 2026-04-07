@@ -179,10 +179,102 @@
 .hours-row .time { color: var(--primary); font-weight: 700; }
 .hours-row .closed { color: var(--text-muted); }
 
+.contact-ig {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: var(--surface);
+    border: 1.5px solid #e1306c44;
+    border-radius: 18px;
+    padding: 24px 28px;
+    text-decoration: none;
+    margin-bottom: 16px;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.contact-ig:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(220,39,67,0.15);
+    border-color: #dc2743;
+}
+.contact-ig-icon { flex-shrink: 0; }
+.contact-ig-text { flex: 1; }
+.contact-ig-text h3 {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+.contact-ig-text p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 6px;
+}
+.ig-handle {
+    font-size: 0.88rem;
+    font-weight: 700;
+    background: linear-gradient(90deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.ig-arrow {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
 @media (max-width: 600px) {
     .contact-grid { grid-template-columns: 1fr; }
     .contact-wa { flex-direction: column; text-align: center; }
+    .contact-ig { flex-wrap: wrap; }
+    .ig-arrow { display: none; }
     .contact-hero h1 { font-size: 1.7rem; }
+}
+
+.contact-ig {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    border-radius: 18px;
+    padding: 28px 32px;
+    text-decoration: none;
+    margin-bottom: 24px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.contact-ig:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(220,39,67,0.3);
+}
+.contact-ig-icon {
+    font-size: 2.4rem;
+    flex-shrink: 0;
+    width: 56px;
+    text-align: center;
+}
+.contact-ig-text h3 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 4px;
+}
+.contact-ig-text p {
+    color: rgba(255,255,255,0.85);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+.ig-cta {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-top: 8px;
+}
+@media (max-width: 600px) {
+    .contact-ig { flex-direction: column; text-align: center; }
 }
 </style>
 
@@ -200,6 +292,33 @@
             <p>Fastest way to reach us. Ask about stock, sizing, custom orders, or track your delivery.</p>
             <span class="wa-cta">💬 Start Chat →</span>
         </div>
+    </a>
+
+    <!-- Instagram -->
+    <a href="https://www.instagram.com/clc.india__?igsh=MTNvbDhseWQ0dzc0aA==" class="contact-ig" target="_blank" rel="noopener">
+        <div class="contact-ig-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                <defs>
+                    <linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#f09433"/>
+                        <stop offset="25%" stop-color="#e6683c"/>
+                        <stop offset="50%" stop-color="#dc2743"/>
+                        <stop offset="75%" stop-color="#cc2366"/>
+                        <stop offset="100%" stop-color="#bc1888"/>
+                    </linearGradient>
+                </defs>
+                <rect width="24" height="24" rx="6" fill="url(#ig-grad)"/>
+                <rect x="6" y="6" width="12" height="12" rx="3.5" stroke="white" stroke-width="1.5" fill="none"/>
+                <circle cx="12" cy="12" r="3" stroke="white" stroke-width="1.5" fill="none"/>
+                <circle cx="16.2" cy="7.8" r="0.9" fill="white"/>
+            </svg>
+        </div>
+        <div class="contact-ig-text">
+            <h3>Follow us on Instagram</h3>
+            <p>Stay updated with new drops, style inspiration and exclusive offers.</p>
+            <span class="ig-handle">@clc.india__</span>
+        </div>
+        <span class="ig-arrow">→</span>
     </a>
 
     <!-- Info cards -->
