@@ -157,14 +157,14 @@ def ensure_db():
 
 def get_offer():
     _blank = {"active": False, "text": "", "bg_color": "#FF6B35",
-              "text_color": "#ffffff", "show_logo": False}
+              "text_color": "#ffffff", "show_logo": True}
     if not USE_DB:
         return _blank
     try:
         row = Setting.query.get("offer")
         if row:
             saved = json.loads(row.value)
-            saved.setdefault("show_logo", False)
+            saved.setdefault("show_logo", True)
             return saved
     except: pass
     return _blank
@@ -255,12 +255,10 @@ DEFAULT_SITE_SETTINGS = {
     "cat_under1500":   True,
     "cat_under2500":   True,
     "cat_new":         True,
-    "cat_premium":     True,
-    "cat_all":         True,
     "size_unit": "uk",   # "uk" or "euro" — no both option
     # Policy pages content (markdown/HTML stored as plain text)
     "policy_privacy":  "# Privacy Policy\n\nYour privacy is important to us. We do not share your personal data with third parties.",
-    "policy_refund":   "# Refund Policy\n\nWe accept returns within 7 days of delivery. Items must be unused and in original packaging.",
+    "policy_return":   "# Return Policy\n\nWe accept returns within 7 days of delivery. Items must be unused and in original packaging.",
     "policy_shipping": "# Shipping Policy\n\nWe ship across India. Standard delivery takes 3–7 business days. Free shipping on all orders.",
 }
 
@@ -477,6 +475,10 @@ def admin_site_settings_page():
         offer=get_offer())
 
 
+@app.route("/contact")
+def page_contact():
+    return render_template("contact.html")
+
 @app.route("/privacy")
 def page_privacy():
     s = get_site_settings()
@@ -485,13 +487,13 @@ def page_privacy():
         content=s.get("policy_privacy",""),
         active="privacy")
 
-@app.route("/refund")
-def page_refund():
+@app.route("/return")
+def page_return():
     s = get_site_settings()
     return render_template("policy.html",
-        title="Refund Policy",
-        content=s.get("policy_refund",""),
-        active="refund")
+        title="Return Policy",
+        content=s.get("policy_return",""),
+        active="return")
 
 @app.route("/shipping")
 def page_shipping():
@@ -744,7 +746,7 @@ def api_save_offer():
              "text":      data.get("text","").strip(),
              "bg_color":  data.get("bg_color","#FF6B35"),
              "text_color":data.get("text_color","#ffffff"),
-             "show_logo": bool(data.get("show_logo", False))}
+             "show_logo": bool(data.get("show_logo", True))}
     set_offer(offer)
     return jsonify({"success": True, "offer": offer})
 
@@ -770,9 +772,8 @@ def api_save_site_settings():
         "show_categories",
         "cat_boots","cat_crocs","cat_girls","cat_sale",
         "cat_under1000","cat_under1500","cat_under2500","cat_new",
-        "cat_premium","cat_all",
         "size_unit",
-        "policy_privacy","policy_refund","policy_shipping",
+        "policy_privacy","policy_return","policy_shipping",
     }
     clean = {k: v for k, v in data.items() if k in allowed_keys}
     save_site_settings(clean)
