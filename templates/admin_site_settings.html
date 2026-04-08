@@ -275,7 +275,7 @@
         </label>
         <div class="section-label" style="margin-bottom:10px;">Toggle individual buttons</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="cat-toggle-grid">
-            {% for slug, label in [("boots","Boots"),("crocs","Crocs"),("girls","Girls"),("sale","Sale"),("under1000","Under 1000"),("under1500","Under 1500"),("under2500","Under 2500"),("new","New")] %}
+            {% for slug, label in [("boots","Boots"),("crocs","Crocs"),("girls","Girls"),("sale","Sale"),("under1000","Under 1000"),("under1500","Under 1500"),("under2500","Under 2500"),("new","New"),("premium","Premium"),("all","All Shoes")] %}
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;
                 background:#f4f8fb;border:1.5px solid #d0e6f5;border-radius:10px;padding:9px 12px;">
                 <input type="checkbox" id="ss-cat-{{ slug }}"
@@ -499,7 +499,7 @@ async function loadSettings() {
         document.getElementById('ss-show-brands').checked = s.show_brands_section !== false;
         const _naEl = document.getElementById('ss-show-new-arrivals'); if(_naEl) _naEl.checked = s.show_new_arrivals !== false;
         const _catEl = document.getElementById('ss-show-categories'); if(_catEl) _catEl.checked = s.show_categories !== false;
-        ["boots","crocs","girls","sale","under1000","under1500","under2500","new"].forEach(slug => {
+        ["boots","crocs","girls","sale","under1000","under1500","under2500","new","premium","all"].forEach(slug => {
             const el = document.getElementById("ss-cat-" + slug);
             if (el) el.checked = s["cat_" + slug] !== false;
         });
@@ -579,7 +579,7 @@ async function saveSection(section) {
         }, '✅ New Arrivals setting saved! Refresh homepage to see change.');
 
     } else if (section === 'categories') {
-        const slugs = ["boots","crocs","girls","sale","under1000","under1500","under2500","new"];
+        const slugs = ["boots","crocs","girls","sale","under1000","under1500","under2500","new","premium","all"];
         const payload = { show_categories: document.getElementById("ss-show-categories")?.checked ?? true };
         slugs.forEach(s => { payload["cat_" + s] = document.getElementById("ss-cat-" + s)?.checked ?? true; });
         try {
