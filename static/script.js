@@ -851,19 +851,6 @@ async function renderBrandPage() {
                 monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
                 monogramEl.innerHTML        = `<span style="font-size:2.4rem;">💰</span>`;
             }
-        
-        } else {
-            // All Shoes — no filter params at all
-            filtered  = products;
-            pageTitle = "All Shoes";
-            document.title = `All Shoes — CALVAC`;
-            if (titleEl)      titleEl.textContent      = "All Shoes";
-            if (sectionTitle) sectionTitle.textContent = `All ${products.length} Styles`;
-            if (monogramEl) {
-                monogramEl.style.background = "rgba(43,159,216,0.12)";
-                monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
-                monogramEl.innerHTML        = `<span style="font-size:2.4rem;">👟</span>`;
-            }
 
         } else if (params.get("sale")) {
             // Sale filter: products with original_price set and above sale price
@@ -879,6 +866,7 @@ async function renderBrandPage() {
                 monogramEl.style.border     = "1px solid rgba(229,62,62,0.3)";
                 monogramEl.innerHTML        = `<span style="font-size:2.4rem;">🏷️</span>`;
             }
+        
         
         } else if (brandName) {
             // Brand page: fuzzy match on brand name
@@ -902,6 +890,7 @@ async function renderBrandPage() {
         console.error("Failed to load brand products:", err);
     }
 }
+
 
 
 /* =================================================
