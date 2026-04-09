@@ -496,10 +496,8 @@ function initThreeScene(cfg) {
     const container = document.getElementById("sneaker-container");
     if (!container) return;
 
-    const rawPath = cfg.model_path || "/static/sneaker.glb";
-    const MODEL_PATH  = rawPath.startsWith("http") ? rawPath
-                      : rawPath.startsWith("/static/") ? rawPath
-                      : "/static/" + rawPath;
+    const rawPath = cfg.model_path || "sneaker.glb";
+    const MODEL_PATH  = rawPath.startsWith("http") ? rawPath : "/static/" + rawPath;
     const MODEL_SCALE = parseFloat(cfg.model_scale)   || 3;
     const MODEL_Y     = parseFloat(cfg.model_y)       || 0.8;
     const MODEL_SPEED = parseFloat(cfg.model_speed)   || 0.006;
@@ -624,11 +622,18 @@ function renderBrandTiles() {
 /* =================================================
    PRODUCT UTILITIES
 ================================================= */
+// Singleton — all sections share one fetch per page load, reducing API calls & egress
+let _productsPromise = null;
 async function fetchProducts() {
-    const res  = await fetch("/api/products");
-    const data = await res.json();
-    try { localStorage.setItem("claxxic_products", JSON.stringify(data)); } catch {}
-    return data;
+    if (_productsPromise) return _productsPromise;
+    _productsPromise = fetch("/api/products")
+        .then(r => r.json())
+        .then(data => {
+            try { localStorage.setItem("claxxic_products", JSON.stringify(data)); } catch {}
+            return data;
+        })
+        .catch(e => { _productsPromise = null; throw e; });
+    return _productsPromise;
 }
 
 /* =================================================
@@ -695,6 +700,7 @@ function buildProductCard(shoe) {
     <div class="card fade-in" style="${oos ? 'opacity:0.75;' : ''}">
         <div style="position:relative;">
             <img src="${shoe.image}" alt="${shoe.name}"
+                 loading="lazy"
                  onerror="this.src='https://placehold.co/280x180/eaf3fa/2B9FD8?text=No+Image'">
             ${oos ? '<div style="position:absolute;top:8px;left:8px;background:#e53e3e;color:#fff;font-size:0.65rem;font-weight:800;padding:3px 8px;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase;">Out of Stock</div>' : ''}
         </div>
