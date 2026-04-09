@@ -261,7 +261,7 @@ DEFAULT_SITE_SETTINGS = {
     "size_unit": "uk",   # "uk" or "euro" — no both option
     # Policy pages content (markdown/HTML stored as plain text)
     "policy_privacy":  "# Privacy Policy\n\nYour privacy is important to us. We do not share your personal data with third parties.",
-    "policy_refund":   "# Refund Policy\n\nWe accept returns within 7 days of delivery. Items must be unused and in original packaging.",
+    "policy_return":   "# Return Policy\n\nWe accept returns within 7 days of delivery. Items must be unused and in original packaging.",
     "policy_shipping": "# Shipping Policy\n\nWe ship across India. Standard delivery takes 3–7 business days. Free shipping on all orders.",
 }
 
@@ -390,7 +390,9 @@ def product(): return render_template("product.html")
 def brand(): return render_template("brand.html")
 @app.route("/cart")
 def cart(): return render_template("cart.html")
-
+@app.route("/contact")
+def page_contact():
+    return render_template("contact.html")
 
 # ── OLD ADMIN URL — return 404 so path is not guessable ──────────────────────
 @app.route("/admin", methods=["GET","POST"])
@@ -486,13 +488,13 @@ def page_privacy():
         content=s.get("policy_privacy",""),
         active="privacy")
 
-@app.route("/refund")
-def page_refund():
+@app.route("/return")
+def page_return():
     s = get_site_settings()
     return render_template("policy.html",
-        title="Refund Policy",
-        content=s.get("policy_refund",""),
-        active="refund")
+        title="Return Policy",
+        content=s.get("policy_return",""),
+        active="return")
 
 @app.route("/shipping")
 def page_shipping():
@@ -591,6 +593,8 @@ def api_public_site_settings():
         "cat_under1500":    s.get("cat_under1500", True),
         "cat_under2500":    s.get("cat_under2500", True),
         "cat_new":          s.get("cat_new",       True),
+        "cat_premium":      s.get("cat_premium",   True),
+        "cat_all":          s.get("cat_all",       True),
     })
 
 

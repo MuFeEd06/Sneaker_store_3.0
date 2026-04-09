@@ -822,6 +822,20 @@ async function renderBrandPage() {
                 monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
                 monogramEl.innerHTML        = `<span style="font-size:2.4rem;">${em}</span>`;
             }
+        } else if (params.get("min_price")) {
+            // Price floor filter: Premium (above 2499)
+            const min     = parseInt(params.get("min_price"));
+            const label   = `Premium (Above ₹${min.toLocaleString("en-IN")})`;
+            filtered  = products.filter(p => p.price >= min);
+            pageTitle = "Premium";
+            document.title = `Premium — CALVAC`;
+            if (titleEl)      titleEl.textContent      = "Premium";
+            if (sectionTitle) sectionTitle.textContent = label;
+            if (monogramEl) {
+                monogramEl.style.background = "rgba(43,159,216,0.12)";
+                monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
+                monogramEl.innerHTML        = `<span style="font-size:2.4rem;">💎</span>`;
+            }
 
         } else if (params.get("max_price")) {
             // Price ceiling filter: Under 1000 / 1500 / 2500
@@ -836,6 +850,19 @@ async function renderBrandPage() {
                 monogramEl.style.background = "rgba(43,159,216,0.12)";
                 monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
                 monogramEl.innerHTML        = `<span style="font-size:2.4rem;">💰</span>`;
+            }
+        
+        } else {
+            // All Shoes — no filter params at all
+            filtered  = products;
+            pageTitle = "All Shoes";
+            document.title = `All Shoes — CALVAC`;
+            if (titleEl)      titleEl.textContent      = "All Shoes";
+            if (sectionTitle) sectionTitle.textContent = `All ${products.length} Styles`;
+            if (monogramEl) {
+                monogramEl.style.background = "rgba(43,159,216,0.12)";
+                monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
+                monogramEl.innerHTML        = `<span style="font-size:2.4rem;">👟</span>`;
             }
 
         } else if (params.get("sale")) {
@@ -852,7 +879,7 @@ async function renderBrandPage() {
                 monogramEl.style.border     = "1px solid rgba(229,62,62,0.3)";
                 monogramEl.innerHTML        = `<span style="font-size:2.4rem;">🏷️</span>`;
             }
-
+        
         } else if (brandName) {
             // Brand page: fuzzy match on brand name
             const qb  = norm(brandName);
@@ -1071,6 +1098,8 @@ const CATEGORIES = [
     { label:"Under 1500", slug:"under1500",  emoji:"💸", url:"/brand?max_price=1500"  },
     { label:"Under 2500", slug:"under2500",  emoji:"🛍️", url:"/brand?max_price=2500"  },
     { label:"New",        slug:"new",        emoji:"✨", url:"/brand?tag=new"         },
+    { label:"Premium",    slug:"premium",    emoji:"💎", url:"/brand?min_price=2500"   },
+    { label:"All Shoes",  slug:"all",        emoji:"👟", url:"/brand"                  },
 ];
 
 function buildCatCard(cat) {
