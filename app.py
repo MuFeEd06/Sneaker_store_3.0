@@ -114,6 +114,7 @@ def _supabase_upload(file_bytes, content_type, storage_path):
             "Authorization": f"Bearer {SUPABASE_KEY}",
             "Content-Type":  content_type,
             "x-upsert":      "true",
+            "Cache-Control": "max-age=2592000, public",  # 30-day CDN cache
         }
     )
     try:
@@ -218,7 +219,7 @@ def build_theme_vars(primary):
 DEFAULT_SITE_SETTINGS = {
     "primary_color":    "#2B9FD8",
     "hero_font":        "default",
-    "model_path":       "sneaker.glb",
+    "model_path":       "/static/sneaker.glb",
     "model_scale":      3.0,
     "model_y":          0.8,
     "model_speed":      0.006,
@@ -575,7 +576,7 @@ def api_public_site_settings():
     return jsonify({
         "primary_color": s.get("primary_color","#2B9FD8"),
         "hero_font":     s.get("hero_font","default"),
-        "model_path":    s.get("model_path","sneaker.glb"),
+        "model_path":    s.get("model_path","/static/sneaker.glb"),
         "model_scale":   s.get("model_scale",3.0),
         "model_y":       s.get("model_y",0.8),
         "model_speed":   s.get("model_speed",0.006),
@@ -787,7 +788,7 @@ def api_save_site_settings():
     if not USE_DB: return jsonify({"error": "No database"}), 503
     data = request.get_json(force=True)
     allowed_keys = {
-        "primary_color","hero_font","model_path","model_scale","model_y","model_speed",
+        "primary_color","hero_font","model_scale","model_y","model_speed",
         "hero_eyebrow","hero_headline","hero_highlight","hero_headline2","hero_sub","hero_cta",
         "hero_cta_color","hero_eyebrow_color","hero_text_color","hero_sub_color",
         "stat1_num","stat1_label","stat2_num","stat2_label","stat3_num","stat3_label",
@@ -805,28 +806,6 @@ def api_save_site_settings():
     save_site_settings(clean)
     return jsonify({"success": True, "settings": clean})
 
-@app.route("/api/x9k2/upload-model", methods=["POST"])
-@admin_required
-def api_upload_model():
-    if "model" not in request.files:
-        return jsonify({"error": "No file"}), 400
-    file = request.files["model"]
-    if not file or not file.filename.lower().endswith(".glb"):
-        return jsonify({"error": "Only .glb files allowed"}), 400
-
-    filename     = secure_filename(file.filename)
-    storage_path = f"models/{filename}"
-    file_bytes   = file.read()
-
-    try:
-        public_url = _supabase_upload(file_bytes, "model/gltf-binary", storage_path)
-        return jsonify({"success": True, "path": public_url, "url": public_url})
-    except Exception as e:
-        print(f"[calvac] Model upload error: {e}")
-        return jsonify({"error": f"Upload failed: {str(e)}"}), 500
-
-
-# ── ORDERS ────────────────────────────────────────────────────────────────────
 
 @app.route("/api/orders", methods=["POST"])
 def create_order():

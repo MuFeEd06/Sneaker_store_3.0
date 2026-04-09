@@ -217,12 +217,11 @@
     <!-- ── 3D MODEL ── -->
     <div class="panel">
         <div class="panel-title">🎮 3D Model & Animation</div>
-        <div style="margin-bottom:18px;">
-            <div class="section-label">Upload New .glb Model</div>
-            <label class="model-label">📦 Choose .glb file<input type="file" accept=".glb" id="ss-model-file" onchange="uploadModel(this)"></label>
-            <div id="ss-model-name" style="font-size:0.76rem;color:#2B9FD8;margin-top:8px;">Current: sneaker.glb</div>
-            <input type="hidden" id="ss-model-path" value="sneaker.glb">
+        <div style="background:#f4f8fb;border:1.5px solid #d0e6f5;border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:0.85rem;color:#5a6a7a;line-height:1.6;">
+            📁 Model loads from <strong>GitHub</strong> at <code style="background:#e8f5fd;padding:2px 6px;border-radius:4px;">static/sneaker.glb</code><br>
+            To change the model, upload a new <code>.glb</code> file to <code>static/</code> in your GitHub repo and rename it <code>sneaker.glb</code>.
         </div>
+        <input type="hidden" id="ss-model-path" value="sneaker.glb">
         <div class="slider-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
             <div class="slider-wrap"><div class="slider-top"><label>Scale</label><span id="ss-scale-val">3.0</span></div><input type="range" id="ss-scale" min="0.5" max="8" step="0.1" value="3.0" oninput="document.getElementById('ss-scale-val').textContent=parseFloat(this.value).toFixed(1)"></div>
             <div class="slider-wrap"><div class="slider-top"><label>Vertical Position</label><span id="ss-y-val">0.8</span></div><input type="range" id="ss-y" min="-3" max="3" step="0.1" value="0.8" oninput="document.getElementById('ss-y-val').textContent=parseFloat(this.value).toFixed(1)"></div>
@@ -275,7 +274,7 @@
         </label>
         <div class="section-label" style="margin-bottom:10px;">Toggle individual buttons</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="cat-toggle-grid">
-            {% for slug, label in [("boots","Boots"),("crocs","Crocs"),("girls","Girls"),("sale","Sale"),("under1000","Under 1000"),("under1500","Under 1500"),("under2500","Under 2500"),("new","New"),("premium","Premium"),("all","All Shoes")] %}
+            {% for slug, label in [("boots","Boots"),("crocs","Crocs"),("girls","Girls"),("sale","Sale"),("under1000","Under 1000"),("under1500","Under 1500"),("under2500","Under 2500"),("new","New")] %}
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;
                 background:#f4f8fb;border:1.5px solid #d0e6f5;border-radius:10px;padding:9px 12px;">
                 <input type="checkbox" id="ss-cat-{{ slug }}"
@@ -499,7 +498,7 @@ async function loadSettings() {
         document.getElementById('ss-show-brands').checked = s.show_brands_section !== false;
         const _naEl = document.getElementById('ss-show-new-arrivals'); if(_naEl) _naEl.checked = s.show_new_arrivals !== false;
         const _catEl = document.getElementById('ss-show-categories'); if(_catEl) _catEl.checked = s.show_categories !== false;
-        ["boots","crocs","girls","sale","under1000","under1500","under2500","new","premium","all"].forEach(slug => {
+        ["boots","crocs","girls","sale","under1000","under1500","under2500","new"].forEach(slug => {
             const el = document.getElementById("ss-cat-" + slug);
             if (el) el.checked = s["cat_" + slug] !== false;
         });
@@ -579,7 +578,7 @@ async function saveSection(section) {
         }, '✅ New Arrivals setting saved! Refresh homepage to see change.');
 
     } else if (section === 'categories') {
-        const slugs = ["boots","crocs","girls","sale","under1000","under1500","under2500","new","premium","all"];
+        const slugs = ["boots","crocs","girls","sale","under1000","under1500","under2500","new"];
         const payload = { show_categories: document.getElementById("ss-show-categories")?.checked ?? true };
         slugs.forEach(s => { payload["cat_" + s] = document.getElementById("ss-cat-" + s)?.checked ?? true; });
         try {
