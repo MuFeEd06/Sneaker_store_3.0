@@ -622,11 +622,18 @@ function renderBrandTiles() {
 /* =================================================
    PRODUCT UTILITIES
 ================================================= */
+// Singleton cache — all sections share one fetch per page load
+let _productsPromise = null;
 async function fetchProducts() {
-    const res  = await fetch("/api/products");
-    const data = await res.json();
-    try { localStorage.setItem("claxxic_products", JSON.stringify(data)); } catch {}
-    return data;
+    if (_productsPromise) return _productsPromise;
+    _productsPromise = fetch("/api/products")
+        .then(r => r.json())
+        .then(data => {
+            try { localStorage.setItem("claxxic_products", JSON.stringify(data)); } catch {}
+            return data;
+        })
+        .catch(e => { _productsPromise = null; throw e; });
+    return _productsPromise;
 }
 
 /* =================================================
@@ -693,6 +700,7 @@ function buildProductCard(shoe) {
     <div class="card fade-in" style="${oos ? 'opacity:0.75;' : ''}">
         <div style="position:relative;">
             <img src="${shoe.image}" alt="${shoe.name}"
+                 loading="lazy"
                  onerror="this.src='https://placehold.co/280x180/eaf3fa/2B9FD8?text=No+Image'">
             ${oos ? '<div style="position:absolute;top:8px;left:8px;background:#e53e3e;color:#fff;font-size:0.65rem;font-weight:800;padding:3px 8px;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase;">Out of Stock</div>' : ''}
         </div>
@@ -815,21 +823,6 @@ async function renderBrandPage() {
                 monogramEl.innerHTML        = `<span style="font-size:2.4rem;">${em}</span>`;
             }
 
-        } else if (params.get("min_price")) {
-            // Price floor filter: Premium (above 2499)
-            const min     = parseInt(params.get("min_price"));
-            const label   = `Premium (Above ₹${min.toLocaleString("en-IN")})`;
-            filtered  = products.filter(p => p.price >= min);
-            pageTitle = "Premium";
-            document.title = `Premium — CALVAC`;
-            if (titleEl)      titleEl.textContent      = "Premium";
-            if (sectionTitle) sectionTitle.textContent = label;
-            if (monogramEl) {
-                monogramEl.style.background = "rgba(43,159,216,0.12)";
-                monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
-                monogramEl.innerHTML        = `<span style="font-size:2.4rem;">💎</span>`;
-            }
-
         } else if (params.get("max_price")) {
             // Price ceiling filter: Under 1000 / 1500 / 2500
             const max     = parseInt(params.get("max_price"));
@@ -865,19 +858,6 @@ async function renderBrandPage() {
             const qb  = norm(brandName);
             filtered  = products.filter(p => norm(p.brand) === qb || norm(p.brand).includes(qb));
             pageTitle = brandName;
-
-        } else {
-            // All Shoes — no filter params at all
-            filtered  = products;
-            pageTitle = "All Shoes";
-            document.title = `All Shoes — CALVAC`;
-            if (titleEl)      titleEl.textContent      = "All Shoes";
-            if (sectionTitle) sectionTitle.textContent = `All ${products.length} Styles`;
-            if (monogramEl) {
-                monogramEl.style.background = "rgba(43,159,216,0.12)";
-                monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
-                monogramEl.innerHTML        = `<span style="font-size:2.4rem;">👟</span>`;
-            }
         }
 
         if (countEl) countEl.textContent = filtered.length;
@@ -1091,8 +1071,6 @@ const CATEGORIES = [
     { label:"Under 1500", slug:"under1500",  emoji:"💸", url:"/brand?max_price=1500"  },
     { label:"Under 2500", slug:"under2500",  emoji:"🛍️", url:"/brand?max_price=2500"  },
     { label:"New",        slug:"new",        emoji:"✨", url:"/brand?tag=new"         },
-    { label:"Premium",    slug:"premium",    emoji:"💎", url:"/brand?min_price=2500"   },
-    { label:"All Shoes",  slug:"all",        emoji:"👟", url:"/brand"                  },
 ];
 
 function buildCatCard(cat) {

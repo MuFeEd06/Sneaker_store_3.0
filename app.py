@@ -8,6 +8,8 @@ from flask import (Flask, jsonify, render_template, request,
 from flask_cors import CORS
 from models import db, Product, Setting, Order, OrderItem
 import json, os, copy, re
+from PIL import Image as PILImage
+import io
 from collections import defaultdict
 import time as _time
 import urllib.request, urllib.error
@@ -157,14 +159,14 @@ def ensure_db():
 
 def get_offer():
     _blank = {"active": False, "text": "", "bg_color": "#FF6B35",
-              "text_color": "#ffffff", "show_logo": True}
+              "text_color": "#ffffff", "show_logo": False}
     if not USE_DB:
         return _blank
     try:
         row = Setting.query.get("offer")
         if row:
             saved = json.loads(row.value)
-            saved.setdefault("show_logo", True)
+            saved.setdefault("show_logo", False)
             return saved
     except: pass
     return _blank
@@ -258,7 +260,7 @@ DEFAULT_SITE_SETTINGS = {
     "size_unit": "uk",   # "uk" or "euro" — no both option
     # Policy pages content (markdown/HTML stored as plain text)
     "policy_privacy":  "# Privacy Policy\n\nYour privacy is important to us. We do not share your personal data with third parties.",
-    "policy_return":   "# Return Policy\n\nWe accept returns within 7 days of delivery. Items must be unused and in original packaging.",
+    "policy_refund":   "# Refund Policy\n\nWe accept returns within 7 days of delivery. Items must be unused and in original packaging.",
     "policy_shipping": "# Shipping Policy\n\nWe ship across India. Standard delivery takes 3–7 business days. Free shipping on all orders.",
 }
 
@@ -475,10 +477,6 @@ def admin_site_settings_page():
         offer=get_offer())
 
 
-@app.route("/contact")
-def page_contact():
-    return render_template("contact.html")
-
 @app.route("/privacy")
 def page_privacy():
     s = get_site_settings()
@@ -487,13 +485,13 @@ def page_privacy():
         content=s.get("policy_privacy",""),
         active="privacy")
 
-@app.route("/return")
-def page_return():
+@app.route("/refund")
+def page_refund():
     s = get_site_settings()
     return render_template("policy.html",
-        title="Return Policy",
-        content=s.get("policy_return",""),
-        active="return")
+        title="Refund Policy",
+        content=s.get("policy_refund",""),
+        active="refund")
 
 @app.route("/shipping")
 def page_shipping():
@@ -592,8 +590,6 @@ def api_public_site_settings():
         "cat_under1500":    s.get("cat_under1500", True),
         "cat_under2500":    s.get("cat_under2500", True),
         "cat_new":          s.get("cat_new",       True),
-        "cat_premium":      s.get("cat_premium",   True),
-        "cat_all":          s.get("cat_all",       True),
     })
 
 
@@ -708,6 +704,31 @@ def api_delete_product(product_id):
     db.session.commit()
     return jsonify({"success": True})
 
+def _compress_image(file_bytes, max_width=800, quality=82):
+    """Resize + compress image before uploading. Reduces egress per image load."""
+    try:
+        img = PILImage.open(io.BytesIO(file_bytes))
+        # Convert RGBA/P to RGB for JPEG compatibility
+        if img.mode in ("RGBA", "P", "LA"):
+            bg = PILImage.new("RGB", img.size, (255, 255, 255))
+            bg.paste(img, mask=img.split()[-1] if img.mode in ("RGBA","LA") else None)
+            img = bg
+        elif img.mode != "RGB":
+            img = img.convert("RGB")
+        # Resize if wider than max_width, keep aspect ratio
+        if img.width > max_width:
+            ratio  = max_width / img.width
+            height = int(img.height * ratio)
+            img    = img.resize((max_width, height), PILImage.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format="WEBP", quality=quality, method=6)
+        compressed = buf.getvalue()
+        # Only use compressed if it's actually smaller
+        return compressed if len(compressed) < len(file_bytes) else file_bytes
+    except Exception as e:
+        print(f"[calvac] Compression skipped: {e}")
+        return file_bytes
+
 @app.route("/api/x9k2/upload-image", methods=["POST"])
 @admin_required
 def api_upload_image():
@@ -728,7 +749,12 @@ def api_upload_image():
     filename   = f"{name_parts[0]}_{ts}.{name_parts[1]}" if len(name_parts) == 2 else f"{filename}_{ts}"
     storage_path  = f"shoes/{brand_slug}/{filename}"
     file_bytes    = file.read()
-    content_type  = file.content_type or "image/jpeg"
+    # Compress + convert to WebP before uploading (reduces egress significantly)
+    file_bytes    = _compress_image(file_bytes)
+    content_type  = "image/webp"
+    # Force .webp extension
+    if not storage_path.endswith(".webp"):
+        storage_path = storage_path.rsplit(".", 1)[0] + ".webp"
 
     try:
         public_url = _supabase_upload(file_bytes, content_type, storage_path)
@@ -746,7 +772,7 @@ def api_save_offer():
              "text":      data.get("text","").strip(),
              "bg_color":  data.get("bg_color","#FF6B35"),
              "text_color":data.get("text_color","#ffffff"),
-             "show_logo": bool(data.get("show_logo", True))}
+             "show_logo": bool(data.get("show_logo", False))}
     set_offer(offer)
     return jsonify({"success": True, "offer": offer})
 
@@ -773,7 +799,7 @@ def api_save_site_settings():
         "cat_boots","cat_crocs","cat_girls","cat_sale",
         "cat_under1000","cat_under1500","cat_under2500","cat_new",
         "size_unit",
-        "policy_privacy","policy_return","policy_shipping",
+        "policy_privacy","policy_refund","policy_shipping",
     }
     clean = {k: v for k, v in data.items() if k in allowed_keys}
     save_site_settings(clean)
