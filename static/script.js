@@ -8,10 +8,10 @@ async function renderNewArrivals() {
     if (!wrap || !track) return;
 
     try {
-        const res  = await fetch("/api/products?tag=new");
-        const data = await res.json();
+        // Use singleton — no separate API call
+        const all  = await fetchProducts();
+        const data = all.filter(p => p.tag === "new");
         if (!data || data.length === 0) {
-            // Hide section if no new products
             const section = document.getElementById("new-arrivals");
             if (section) section.style.display = "none";
             return;
@@ -486,10 +486,7 @@ function toggleAddressForm() {
 const container = document.getElementById("sneaker-container");
 
 if (container) {
-    fetch("/api/site-settings")
-        .then(r => r.json())
-        .catch(() => ({}))
-        .then(cfg => initThreeScene(cfg));
+    fetchSiteSettings().then(cfg => initThreeScene(cfg));
 }
 
 function initThreeScene(cfg) {
@@ -822,20 +819,6 @@ async function renderBrandPage() {
                 monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
                 monogramEl.innerHTML        = `<span style="font-size:2.4rem;">${em}</span>`;
             }
-        } else if (params.get("min_price")) {
-            // Price floor filter: Premium (above 2499)
-            const min     = parseInt(params.get("min_price"));
-            const label   = `Premium (Above ₹${min.toLocaleString("en-IN")})`;
-            filtered  = products.filter(p => p.price >= min);
-            pageTitle = "Premium";
-            document.title = `Premium — CALVAC`;
-            if (titleEl)      titleEl.textContent      = "Premium";
-            if (sectionTitle) sectionTitle.textContent = label;
-            if (monogramEl) {
-                monogramEl.style.background = "rgba(43,159,216,0.12)";
-                monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
-                monogramEl.innerHTML        = `<span style="font-size:2.4rem;">💎</span>`;
-            }
 
         } else if (params.get("max_price")) {
             // Price ceiling filter: Under 1000 / 1500 / 2500
@@ -866,8 +849,7 @@ async function renderBrandPage() {
                 monogramEl.style.border     = "1px solid rgba(229,62,62,0.3)";
                 monogramEl.innerHTML        = `<span style="font-size:2.4rem;">🏷️</span>`;
             }
-        
-        
+
         } else if (brandName) {
             // Brand page: fuzzy match on brand name
             const qb  = norm(brandName);
@@ -890,7 +872,6 @@ async function renderBrandPage() {
         console.error("Failed to load brand products:", err);
     }
 }
-
 
 
 /* =================================================
@@ -1087,8 +1068,6 @@ const CATEGORIES = [
     { label:"Under 1500", slug:"under1500",  emoji:"💸", url:"/brand?max_price=1500"  },
     { label:"Under 2500", slug:"under2500",  emoji:"🛍️", url:"/brand?max_price=2500"  },
     { label:"New",        slug:"new",        emoji:"✨", url:"/brand?tag=new"         },
-    { label:"Premium",    slug:"premium",    emoji:"💎", url:"/brand?min_price=2500"   },
-    { label:"All Shoes",  slug:"all",        emoji:"👟", url:"/brand"                  },
 ];
 
 function buildCatCard(cat) {
@@ -1131,8 +1110,7 @@ async function initCategoryScroll() {
     // Load which buttons are enabled from site settings
     let enabled = {};
     try {
-        const res  = await fetch("/api/site-settings");
-        const cfg  = await res.json();
+        const cfg  = await fetchSiteSettings();
         if (cfg.show_categories === false) {
             const section = document.getElementById("cat-scroll-section");
             if (section) section.style.display = "none";
@@ -1232,10 +1210,9 @@ let _sizeUnit = "uk";  // "uk" | "euro" — no both option
 
 async function loadSizeUnit() {
     try {
-        const res  = await fetch("/api/site-settings");
-        const data = await res.json();
+        const data = await fetchSiteSettings();
         _sizeUnit  = (data.size_unit === "euro") ? "euro" : "uk";
-    } catch(e) { _sizeUnit = "both"; }
+    } catch(e) { _sizeUnit = "uk"; }
 }
 
 function getDisplayLabel(ukSize) {

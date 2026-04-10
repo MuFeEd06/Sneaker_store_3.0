@@ -133,6 +133,9 @@ _db_ready = False
 @app.after_request
 def add_security_headers(response):
     """Add security headers to every response."""
+    # Long cache for static assets (CSS, JS, images from /static/)
+    if request.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     response.headers["X-Content-Type-Options"]    = "nosniff"
     response.headers["X-Frame-Options"]           = "SAMEORIGIN"
     response.headers["Referrer-Policy"]           = "strict-origin-when-cross-origin"
@@ -540,7 +543,9 @@ def get_products():
     if sale:      query = query.filter(Product.original_price > Product.price, Product.original_price > 0)
     if search:    query = query.filter(db.or_(
         Product.name.ilike(f"%{search}%"), Product.brand.ilike(f"%{search}%")))
-    return jsonify(fix_image_paths([p.to_dict() for p in query.distinct(Product.id).all()]))
+    resp = jsonify(fix_image_paths([p.to_dict() for p in query.distinct(Product.id).all()]))
+    resp.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=300"
+    return resp
 
 @app.route("/api/products/trending")
 def get_trending():
@@ -567,7 +572,9 @@ def search_products():
     if not q or not USE_DB: return jsonify([])
     products = Product.query.filter(db.or_(
         Product.name.ilike(f"%{q}%"), Product.brand.ilike(f"%{q}%"))).all()
-    return jsonify(fix_image_paths([p.to_dict() for p in products]))
+    resp = jsonify(fix_image_paths([p.to_dict() for p in products]))
+    resp.headers["Cache-Control"] = "public, max-age=30"
+    return resp
 
 @app.route("/api/offer")
 def api_get_offer(): return jsonify(get_offer())
@@ -575,7 +582,7 @@ def api_get_offer(): return jsonify(get_offer())
 @app.route("/api/site-settings")
 def api_public_site_settings():
     s = get_site_settings()
-    return jsonify({
+    resp = jsonify({
         "primary_color": s.get("primary_color","#2B9FD8"),
         "hero_font":     s.get("hero_font","default"),
         "model_path":    s.get("model_path","/static/sneaker.glb"),
@@ -596,6 +603,8 @@ def api_public_site_settings():
         "cat_premium":      s.get("cat_premium",   True),
         "cat_all":          s.get("cat_all",       True),
     })
+    resp.headers["Cache-Control"] = "public, max-age=120, stale-while-revalidate=600"
+    return resp
 
 
 # ── ADMIN API ─────────────────────────────────────────────────────────────────
