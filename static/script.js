@@ -8,10 +8,10 @@ async function renderNewArrivals() {
     if (!wrap || !track) return;
 
     try {
-        // Use singleton — no separate API call
-        const all  = await fetchProducts();
-        const data = all.filter(p => p.tag === "new");
+        const res  = await fetch("/api/products?tag=new");
+        const data = await res.json();
         if (!data || data.length === 0) {
+            // Hide section if no new products
             const section = document.getElementById("new-arrivals");
             if (section) section.style.display = "none";
             return;
@@ -486,7 +486,10 @@ function toggleAddressForm() {
 const container = document.getElementById("sneaker-container");
 
 if (container) {
-    fetchSiteSettings().then(cfg => initThreeScene(cfg));
+    fetch("/api/site-settings")
+        .then(r => r.json())
+        .catch(() => ({}))
+        .then(cfg => initThreeScene(cfg));
 }
 
 function initThreeScene(cfg) {
@@ -1110,7 +1113,8 @@ async function initCategoryScroll() {
     // Load which buttons are enabled from site settings
     let enabled = {};
     try {
-        const cfg  = await fetchSiteSettings();
+        const res  = await fetch("/api/site-settings");
+        const cfg  = await res.json();
         if (cfg.show_categories === false) {
             const section = document.getElementById("cat-scroll-section");
             if (section) section.style.display = "none";
@@ -1210,9 +1214,10 @@ let _sizeUnit = "uk";  // "uk" | "euro" — no both option
 
 async function loadSizeUnit() {
     try {
-        const data = await fetchSiteSettings();
+        const res  = await fetch("/api/site-settings");
+        const data = await res.json();
         _sizeUnit  = (data.size_unit === "euro") ? "euro" : "uk";
-    } catch(e) { _sizeUnit = "uk"; }
+    } catch(e) { _sizeUnit = "both"; }
 }
 
 function getDisplayLabel(ukSize) {
