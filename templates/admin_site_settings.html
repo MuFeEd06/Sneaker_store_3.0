@@ -217,11 +217,12 @@
     <!-- ── 3D MODEL ── -->
     <div class="panel">
         <div class="panel-title">🎮 3D Model & Animation</div>
-        <div style="background:#f4f8fb;border:1.5px solid #d0e6f5;border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:0.85rem;color:#5a6a7a;line-height:1.6;">
-            📁 Model loads from <strong>GitHub</strong> at <code style="background:#e8f5fd;padding:2px 6px;border-radius:4px;">static/sneaker.glb</code><br>
-            To change the model, upload a new <code>.glb</code> file to <code>static/</code> in your GitHub repo and rename it <code>sneaker.glb</code>.
+        <div style="margin-bottom:18px;">
+            <div class="section-label">Upload New .glb Model</div>
+            <label class="model-label">📦 Choose .glb file<input type="file" accept=".glb" id="ss-model-file" onchange="uploadModel(this)"></label>
+            <div id="ss-model-name" style="font-size:0.76rem;color:#2B9FD8;margin-top:8px;">Current: sneaker.glb</div>
+            <input type="hidden" id="ss-model-path" value="sneaker.glb">
         </div>
-        <input type="hidden" id="ss-model-path" value="sneaker.glb">
         <div class="slider-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
             <div class="slider-wrap"><div class="slider-top"><label>Scale</label><span id="ss-scale-val">3.0</span></div><input type="range" id="ss-scale" min="0.5" max="8" step="0.1" value="3.0" oninput="document.getElementById('ss-scale-val').textContent=parseFloat(this.value).toFixed(1)"></div>
             <div class="slider-wrap"><div class="slider-top"><label>Vertical Position</label><span id="ss-y-val">0.8</span></div><input type="range" id="ss-y" min="-3" max="3" step="0.1" value="0.8" oninput="document.getElementById('ss-y-val').textContent=parseFloat(this.value).toFixed(1)"></div>
