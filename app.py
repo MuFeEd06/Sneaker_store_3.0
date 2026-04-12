@@ -133,9 +133,6 @@ _db_ready = False
 @app.after_request
 def add_security_headers(response):
     """Add security headers to every response."""
-    # Long cache for static assets (CSS, JS, images from /static/)
-    if request.path.startswith("/static/"):
-        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     response.headers["X-Content-Type-Options"]    = "nosniff"
     response.headers["X-Frame-Options"]           = "SAMEORIGIN"
     response.headers["Referrer-Policy"]           = "strict-origin-when-cross-origin"
@@ -543,9 +540,7 @@ def get_products():
     if sale:      query = query.filter(Product.original_price > Product.price, Product.original_price > 0)
     if search:    query = query.filter(db.or_(
         Product.name.ilike(f"%{search}%"), Product.brand.ilike(f"%{search}%")))
-    resp = jsonify(fix_image_paths([p.to_dict() for p in query.distinct(Product.id).all()]))
-    resp.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=300"
-    return resp
+    return jsonify(fix_image_paths([p.to_dict() for p in query.distinct(Product.id).all()]))
 
 @app.route("/api/products/trending")
 def get_trending():
@@ -572,9 +567,7 @@ def search_products():
     if not q or not USE_DB: return jsonify([])
     products = Product.query.filter(db.or_(
         Product.name.ilike(f"%{q}%"), Product.brand.ilike(f"%{q}%"))).all()
-    resp = jsonify(fix_image_paths([p.to_dict() for p in products]))
-    resp.headers["Cache-Control"] = "public, max-age=30"
-    return resp
+    return jsonify(fix_image_paths([p.to_dict() for p in products]))
 
 @app.route("/api/offer")
 def api_get_offer(): return jsonify(get_offer())
@@ -582,7 +575,7 @@ def api_get_offer(): return jsonify(get_offer())
 @app.route("/api/site-settings")
 def api_public_site_settings():
     s = get_site_settings()
-    resp = jsonify({
+    return jsonify({
         "primary_color": s.get("primary_color","#2B9FD8"),
         "hero_font":     s.get("hero_font","default"),
         "model_path":    s.get("model_path","/static/sneaker.glb"),
@@ -603,8 +596,6 @@ def api_public_site_settings():
         "cat_premium":      s.get("cat_premium",   True),
         "cat_all":          s.get("cat_all",       True),
     })
-    resp.headers["Cache-Control"] = "public, max-age=120, stale-while-revalidate=600"
-    return resp
 
 
 # ── ADMIN API ─────────────────────────────────────────────────────────────────
@@ -742,6 +733,63 @@ def _compress_image(file_bytes, max_width=800, quality=82):
     except Exception as e:
         print(f"[calvac] Compression skipped: {e}")
         return file_bytes
+
+def _imagekit_upload(file_bytes, filename, folder="shoes"):
+    """Upload image to ImageKit CDN. Free plan: 20GB bandwidth, 3GB storage, no credit card."""
+    import base64
+    if not IK_PRIVATE_KEY or not IK_URL_ENDPOINT:
+        raise ValueError("IK_PRIVATE_KEY and IK_URL_ENDPOINT env vars not set")
+
+    # ImageKit upload API — uses HTTP Basic Auth with private key as username
+    auth = base64.b64encode(f"{IK_PRIVATE_KEY}:".encode()).decode()
+    boundary = "----CalvacBoundary"
+
+    # Build multipart form data manually (no requests lib needed)
+    def encode_part(name, value):
+        return (
+            f"--{boundary}
+"
+            f'Content-Disposition: form-data; name="{name}"
+
+'
+            f"{value}
+"
+        ).encode()
+
+    body = (
+        encode_part("fileName", filename) +
+        encode_part("folder",   f"/{folder}") +
+        encode_part("useUniqueFileName", "true") +
+        f"--{boundary}
+".encode() +
+        f'Content-Disposition: form-data; name="file"; filename="{filename}"
+'.encode() +
+        f"Content-Type: image/webp
+
+".encode() +
+        file_bytes +
+        f"
+--{boundary}--
+".encode()
+    )
+
+    req = urllib.request.Request(
+        "https://upload.imagekit.io/api/v1/files/upload",
+        data    = body,
+        method  = "POST",
+        headers = {
+            "Authorization": f"Basic {auth}",
+            "Content-Type":  f"multipart/form-data; boundary={boundary}",
+        }
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode())
+            # Return the ImageKit URL — auto-serves WebP/AVIF to supported browsers
+            return result["url"]
+    except urllib.error.HTTPError as e:
+        body_err = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"ImageKit upload failed: {e.code} {body_err}")
 
 @app.route("/api/x9k2/upload-image", methods=["POST"])
 @admin_required
