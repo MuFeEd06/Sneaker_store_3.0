@@ -8,6 +8,8 @@ from flask import (Flask, jsonify, render_template, request,
 from flask_cors import CORS
 from models import db, Product, Setting, Order, OrderItem
 import json, os, copy, re
+from PIL import Image as PILImage
+import io
 from collections import defaultdict
 import time as _time
 import urllib.request, urllib.error
@@ -112,6 +114,7 @@ def _supabase_upload(file_bytes, content_type, storage_path):
             "Authorization": f"Bearer {SUPABASE_KEY}",
             "Content-Type":  content_type,
             "x-upsert":      "true",
+            "Cache-Control": "max-age=2592000, public",  # 30-day CDN cache
         }
     )
     try:
@@ -157,14 +160,14 @@ def ensure_db():
 
 def get_offer():
     _blank = {"active": False, "text": "", "bg_color": "#FF6B35",
-              "text_color": "#ffffff", "show_logo": True}
+              "text_color": "#ffffff", "show_logo": False}
     if not USE_DB:
         return _blank
     try:
         row = Setting.query.get("offer")
         if row:
             saved = json.loads(row.value)
-            saved.setdefault("show_logo", True)
+            saved.setdefault("show_logo", False)
             return saved
     except: pass
     return _blank
@@ -216,7 +219,7 @@ def build_theme_vars(primary):
 DEFAULT_SITE_SETTINGS = {
     "primary_color":    "#2B9FD8",
     "hero_font":        "default",
-    "model_path":       "sneaker.glb",
+    "model_path":       "/static/sneaker.glb",
     "model_scale":      3.0,
     "model_y":          0.8,
     "model_speed":      0.006,
@@ -387,7 +390,9 @@ def product(): return render_template("product.html")
 def brand(): return render_template("brand.html")
 @app.route("/cart")
 def cart(): return render_template("cart.html")
-
+@app.route("/contact")
+def page_contact():
+    return render_template("contact.html")
 
 # ── OLD ADMIN URL — return 404 so path is not guessable ──────────────────────
 @app.route("/admin", methods=["GET","POST"])
@@ -474,10 +479,6 @@ def admin_site_settings_page():
         site_settings=get_site_settings(),
         offer=get_offer())
 
-
-@app.route("/contact")
-def page_contact():
-    return render_template("contact.html")
 
 @app.route("/privacy")
 def page_privacy():
@@ -577,7 +578,7 @@ def api_public_site_settings():
     return jsonify({
         "primary_color": s.get("primary_color","#2B9FD8"),
         "hero_font":     s.get("hero_font","default"),
-        "model_path":    s.get("model_path","sneaker.glb"),
+        "model_path":    s.get("model_path","/static/sneaker.glb"),
         "model_scale":   s.get("model_scale",3.0),
         "model_y":       s.get("model_y",0.8),
         "model_speed":   s.get("model_speed",0.006),
@@ -708,6 +709,88 @@ def api_delete_product(product_id):
     db.session.commit()
     return jsonify({"success": True})
 
+def _compress_image(file_bytes, max_width=800, quality=82):
+    """Resize + compress image before uploading. Reduces egress per image load."""
+    try:
+        img = PILImage.open(io.BytesIO(file_bytes))
+        # Convert RGBA/P to RGB for JPEG compatibility
+        if img.mode in ("RGBA", "P", "LA"):
+            bg = PILImage.new("RGB", img.size, (255, 255, 255))
+            bg.paste(img, mask=img.split()[-1] if img.mode in ("RGBA","LA") else None)
+            img = bg
+        elif img.mode != "RGB":
+            img = img.convert("RGB")
+        # Resize if wider than max_width, keep aspect ratio
+        if img.width > max_width:
+            ratio  = max_width / img.width
+            height = int(img.height * ratio)
+            img    = img.resize((max_width, height), PILImage.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format="WEBP", quality=quality, method=6)
+        compressed = buf.getvalue()
+        # Only use compressed if it's actually smaller
+        return compressed if len(compressed) < len(file_bytes) else file_bytes
+    except Exception as e:
+        print(f"[calvac] Compression skipped: {e}")
+        return file_bytes
+
+def _imagekit_upload(file_bytes, filename, folder="shoes"):
+    """Upload image to ImageKit CDN. Free plan: 20GB bandwidth, 3GB storage, no credit card."""
+    import base64
+    if not IK_PRIVATE_KEY or not IK_URL_ENDPOINT:
+        raise ValueError("IK_PRIVATE_KEY and IK_URL_ENDPOINT env vars not set")
+
+    # ImageKit upload API — uses HTTP Basic Auth with private key as username
+    auth = base64.b64encode(f"{IK_PRIVATE_KEY}:".encode()).decode()
+    boundary = "----CalvacBoundary"
+
+    # Build multipart form data manually (no requests lib needed)
+    def encode_part(name, value):
+        return (
+            f"--{boundary}
+"
+            f'Content-Disposition: form-data; name="{name}"
+
+'
+            f"{value}
+"
+        ).encode()
+
+    body = (
+        encode_part("fileName", filename) +
+        encode_part("folder",   f"/{folder}") +
+        encode_part("useUniqueFileName", "true") +
+        f"--{boundary}
+".encode() +
+        f'Content-Disposition: form-data; name="file"; filename="{filename}"
+'.encode() +
+        f"Content-Type: image/webp
+
+".encode() +
+        file_bytes +
+        f"
+--{boundary}--
+".encode()
+    )
+
+    req = urllib.request.Request(
+        "https://upload.imagekit.io/api/v1/files/upload",
+        data    = body,
+        method  = "POST",
+        headers = {
+            "Authorization": f"Basic {auth}",
+            "Content-Type":  f"multipart/form-data; boundary={boundary}",
+        }
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode())
+            # Return the ImageKit URL — auto-serves WebP/AVIF to supported browsers
+            return result["url"]
+    except urllib.error.HTTPError as e:
+        body_err = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"ImageKit upload failed: {e.code} {body_err}")
+
 @app.route("/api/x9k2/upload-image", methods=["POST"])
 @admin_required
 def api_upload_image():
@@ -728,7 +811,12 @@ def api_upload_image():
     filename   = f"{name_parts[0]}_{ts}.{name_parts[1]}" if len(name_parts) == 2 else f"{filename}_{ts}"
     storage_path  = f"shoes/{brand_slug}/{filename}"
     file_bytes    = file.read()
-    content_type  = file.content_type or "image/jpeg"
+    # Compress + convert to WebP before uploading (reduces egress significantly)
+    file_bytes    = _compress_image(file_bytes)
+    content_type  = "image/webp"
+    # Force .webp extension
+    if not storage_path.endswith(".webp"):
+        storage_path = storage_path.rsplit(".", 1)[0] + ".webp"
 
     try:
         public_url = _supabase_upload(file_bytes, content_type, storage_path)
@@ -746,7 +834,7 @@ def api_save_offer():
              "text":      data.get("text","").strip(),
              "bg_color":  data.get("bg_color","#FF6B35"),
              "text_color":data.get("text_color","#ffffff"),
-             "show_logo": bool(data.get("show_logo", True))}
+             "show_logo": bool(data.get("show_logo", False))}
     set_offer(offer)
     return jsonify({"success": True, "offer": offer})
 
@@ -761,7 +849,7 @@ def api_save_site_settings():
     if not USE_DB: return jsonify({"error": "No database"}), 503
     data = request.get_json(force=True)
     allowed_keys = {
-        "primary_color","hero_font","model_path","model_scale","model_y","model_speed",
+        "primary_color","hero_font","model_scale","model_y","model_speed",
         "hero_eyebrow","hero_headline","hero_highlight","hero_headline2","hero_sub","hero_cta",
         "hero_cta_color","hero_eyebrow_color","hero_text_color","hero_sub_color",
         "stat1_num","stat1_label","stat2_num","stat2_label","stat3_num","stat3_label",
@@ -773,34 +861,12 @@ def api_save_site_settings():
         "cat_boots","cat_crocs","cat_girls","cat_sale",
         "cat_under1000","cat_under1500","cat_under2500","cat_new",
         "size_unit",
-        "policy_privacy","policy_return","policy_shipping",
+        "policy_privacy","policy_refund","policy_shipping",
     }
     clean = {k: v for k, v in data.items() if k in allowed_keys}
     save_site_settings(clean)
     return jsonify({"success": True, "settings": clean})
 
-@app.route("/api/x9k2/upload-model", methods=["POST"])
-@admin_required
-def api_upload_model():
-    if "model" not in request.files:
-        return jsonify({"error": "No file"}), 400
-    file = request.files["model"]
-    if not file or not file.filename.lower().endswith(".glb"):
-        return jsonify({"error": "Only .glb files allowed"}), 400
-
-    filename     = secure_filename(file.filename)
-    storage_path = f"models/{filename}"
-    file_bytes   = file.read()
-
-    try:
-        public_url = _supabase_upload(file_bytes, "model/gltf-binary", storage_path)
-        return jsonify({"success": True, "path": public_url, "url": public_url})
-    except Exception as e:
-        print(f"[calvac] Model upload error: {e}")
-        return jsonify({"error": f"Upload failed: {str(e)}"}), 500
-
-
-# ── ORDERS ────────────────────────────────────────────────────────────────────
 
 @app.route("/api/orders", methods=["POST"])
 def create_order():
