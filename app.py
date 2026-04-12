@@ -740,37 +740,28 @@ def _imagekit_upload(file_bytes, filename, folder="shoes"):
     if not IK_PRIVATE_KEY or not IK_URL_ENDPOINT:
         raise ValueError("IK_PRIVATE_KEY and IK_URL_ENDPOINT env vars not set")
 
-    # ImageKit upload API — uses HTTP Basic Auth with private key as username
-    auth = base64.b64encode(f"{IK_PRIVATE_KEY}:".encode()).decode()
-    boundary = "----CalvacBoundary"
+    auth     = base64.b64encode(f"{IK_PRIVATE_KEY}:".encode()).decode()
+    boundary = b"----CalvacBoundary7MA4YWxkTrZu0gW"
+    CRLF     = b"\r\n"
 
-    # Build multipart form data manually (no requests lib needed)
-    def encode_part(name, value):
+    def field(name, value):
+        if isinstance(value, str):
+            value = value.encode()
         return (
-            f"--{boundary}
-"
-            f'Content-Disposition: form-data; name="{name}"
-
-'
-            f"{value}
-"
-        ).encode()
+            b"--" + boundary + CRLF +
+            f'Content-Disposition: form-data; name="{name}"'.encode() + CRLF + CRLF +
+            value + CRLF
+        )
 
     body = (
-        encode_part("fileName", filename) +
-        encode_part("folder",   f"/{folder}") +
-        encode_part("useUniqueFileName", "true") +
-        f"--{boundary}
-".encode() +
-        f'Content-Disposition: form-data; name="file"; filename="{filename}"
-'.encode() +
-        f"Content-Type: image/webp
-
-".encode() +
-        file_bytes +
-        f"
---{boundary}--
-".encode()
+        field("fileName", filename) +
+        field("folder",   f"/{folder}") +
+        field("useUniqueFileName", "true") +
+        b"--" + boundary + CRLF +
+        f'Content-Disposition: form-data; name="file"; filename="{filename}"'.encode() + CRLF +
+        b"Content-Type: image/webp" + CRLF + CRLF +
+        file_bytes + CRLF +
+        b"--" + boundary + b"--" + CRLF
     )
 
     req = urllib.request.Request(
@@ -779,17 +770,17 @@ def _imagekit_upload(file_bytes, filename, folder="shoes"):
         method  = "POST",
         headers = {
             "Authorization": f"Basic {auth}",
-            "Content-Type":  f"multipart/form-data; boundary={boundary}",
+            "Content-Type":  f"multipart/form-data; boundary={boundary.decode()}",
         }
     )
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             result = json.loads(resp.read().decode())
-            # Return the ImageKit URL — auto-serves WebP/AVIF to supported browsers
             return result["url"]
     except urllib.error.HTTPError as e:
         body_err = e.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"ImageKit upload failed: {e.code} {body_err}")
+
 
 @app.route("/api/x9k2/upload-image", methods=["POST"])
 @admin_required
