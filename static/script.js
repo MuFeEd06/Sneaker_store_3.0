@@ -1063,14 +1063,16 @@ function getSizeLabel(size) {
 ================================================= */
 // Categories defined per-button (slug matches site_settings key)
 const CATEGORIES = [
-    { label:"Boots",      slug:"boots",      emoji:"👢", url:"/brand?tag=boots"      },
-    { label:"Crocs",      slug:"crocs",      emoji:"🥿", url:"/brand?tag=crocs"      },
-    { label:"Girls",      slug:"girls",      emoji:"👟", url:"/brand?tag=girls"      },
-    { label:"Sale",       slug:"sale",       emoji:"🏷️", url:"/brand?sale=1"         },
+    { label:"Boots",      slug:"boots",      emoji:"👢", url:"/brand?tag=boots"       },
+    { label:"Crocs",      slug:"crocs",      emoji:"🥿", url:"/brand?tag=crocs"       },
+    { label:"Girls",      slug:"girls",      emoji:"👟", url:"/brand?tag=girls"       },
+    { label:"Sale",       slug:"sale",       emoji:"🏷️", url:"/brand?sale=1"          },
     { label:"Under 1000", slug:"under1000",  emoji:"💰", url:"/brand?max_price=1000"  },
     { label:"Under 1500", slug:"under1500",  emoji:"💸", url:"/brand?max_price=1500"  },
     { label:"Under 2500", slug:"under2500",  emoji:"🛍️", url:"/brand?max_price=2500"  },
-    { label:"New",        slug:"new",        emoji:"✨", url:"/brand?tag=new"         },
+    { label:"New",        slug:"new",        emoji:"✨", url:"/brand?tag=new"          },
+    { label:"Premium",    slug:"premium",    emoji:"💎", url:"/brand?min_price=2500"  },
+    { label:"All Shoes",  slug:"all",        emoji:"👟", url:"/brand"                 },
 ];
 
 function buildCatCard(cat) {
