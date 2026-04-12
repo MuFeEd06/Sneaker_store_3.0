@@ -823,6 +823,22 @@ async function renderBrandPage() {
                 monogramEl.innerHTML        = `<span style="font-size:2.4rem;">${em}</span>`;
             }
 
+        } else if (params.get("min_price")) {
+            // Price floor filter: Premium (above min price)
+            const min     = parseInt(params.get("min_price"));
+            const label   = `Premium (Above ₹${min.toLocaleString("en-IN")})`;
+            filtered  = products.filter(p => p.price >= min);
+            pageTitle = "Premium";
+            document.title = `Premium — CALVAC`;
+            if (titleEl)      titleEl.textContent      = "Premium";
+            if (sectionTitle) sectionTitle.textContent = `Shoes Above ₹${min.toLocaleString("en-IN")}`;
+            if (countEl)      countEl.textContent       = filtered.length;
+            if (monogramEl) {
+                monogramEl.style.background = "rgba(43,159,216,0.12)";
+                monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
+                monogramEl.innerHTML        = `<span style="font-size:2.4rem;">💎</span>`;
+            }
+
         } else if (params.get("max_price")) {
             // Price ceiling filter: Under 1000 / 1500 / 2500
             const max     = parseInt(params.get("max_price"));
