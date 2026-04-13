@@ -793,28 +793,22 @@ def api_upload_image():
     if not allowed_file(file.filename):
         return jsonify({"error": "Invalid file type. Use JPG, PNG or WEBP"}), 400
 
-    brand_slug    = slugify(brand)
-    filename      = secure_filename(file.filename)
-    # Add timestamp prefix to avoid filename collisions
     import time as _t
-    ts = int(_t.time())
-    name_parts = filename.rsplit(".", 1)
-    filename   = f"{name_parts[0]}_{ts}.{name_parts[1]}" if len(name_parts) == 2 else f"{filename}_{ts}"
-    storage_path  = f"shoes/{brand_slug}/{filename}"
-    file_bytes    = file.read()
-    # Compress + convert to WebP before uploading (reduces egress significantly)
-    file_bytes    = _compress_image(file_bytes)
-    content_type  = "image/webp"
-    # Force .webp extension
-    if not storage_path.endswith(".webp"):
-        storage_path = storage_path.rsplit(".", 1)[0] + ".webp"
+    ts         = int(_t.time())
+    brand_slug = slugify(brand)
+    raw_name   = secure_filename(file.filename).rsplit(".", 1)[0]
+    filename   = f"{raw_name}_{ts}.webp"
+    folder     = f"shoes/{brand_slug}"
+    file_bytes = file.read()
+    # Compress + convert to WebP before uploading
+    file_bytes = _compress_image(file_bytes)
 
     try:
-        public_url = _supabase_upload(file_bytes, content_type, storage_path)
+        public_url = _imagekit_upload(file_bytes, filename, folder)
         return jsonify({"success": True, "path": public_url, "url": public_url})
     except Exception as e:
         print(f"[calvac] Upload error: {e}")
-        return jsonify({"error": f"Upload failed: {str(e)}"}), 500
+        return jsonify({"error": "Upload failed. Please try again."}), 500
 
 @app.route("/api/x9k2/offer", methods=["POST"])
 @admin_required
