@@ -735,30 +735,32 @@ def _compress_image(file_bytes, max_width=800, quality=82):
         return file_bytes
 
 def _imagekit_upload(file_bytes, filename, folder="shoes"):
-    """Upload image to ImageKit CDN using requests library."""
-    import base64, urllib.request, urllib.error, json as _json
+    """Upload image to ImageKit CDN. Free plan: 20GB bandwidth, 3GB storage, no credit card."""
+    import base64
     if not IK_PRIVATE_KEY or not IK_URL_ENDPOINT:
         raise ValueError("IK_PRIVATE_KEY and IK_URL_ENDPOINT env vars not set")
 
-    auth      = base64.b64encode(f"{IK_PRIVATE_KEY}:".encode()).decode()
-    boundary  = b"--ImageKitBoundary1776"
-    CRLF      = b"\r\n"
+    auth     = base64.b64encode(f"{IK_PRIVATE_KEY}:".encode()).decode()
+    boundary = b"----CalvacBoundary7MA4YWxkTrZu0gW"
+    CRLF     = b"\r\n"
 
-    def part(name, value, ctype=None, fname=None):
-        disp = f'form-data; name="{name}"' + (f'; filename="{fname}"' if fname else "")
-        out  = b"--" + boundary + CRLF
-        out += f"Content-Disposition: {disp}".encode() + CRLF
-        if ctype:
-            out += f"Content-Type: {ctype}".encode() + CRLF
-        out += CRLF
-        out += (value if isinstance(value, bytes) else value.encode()) + CRLF
-        return out
+    def field(name, value):
+        if isinstance(value, str):
+            value = value.encode()
+        return (
+            b"--" + boundary + CRLF +
+            f'Content-Disposition: form-data; name="{name}"'.encode() + CRLF + CRLF +
+            value + CRLF
+        )
 
     body = (
-        part("fileName",          filename) +
-        part("folder",            f"/{folder}") +
-        part("useUniqueFileName", "true") +
-        part("file",              file_bytes, ctype="image/webp", fname=filename) +
+        field("fileName", filename) +
+        field("folder",   f"/{folder}") +
+        field("useUniqueFileName", "true") +
+        b"--" + boundary + CRLF +
+        f'Content-Disposition: form-data; name="file"; filename="{filename}"'.encode() + CRLF +
+        b"Content-Type: image/webp" + CRLF + CRLF +
+        file_bytes + CRLF +
         b"--" + boundary + b"--" + CRLF
     )
 
@@ -768,20 +770,17 @@ def _imagekit_upload(file_bytes, filename, folder="shoes"):
         method  = "POST",
         headers = {
             "Authorization": f"Basic {auth}",
-            "Content-Type":  f"multipart/form-data; boundary={boundary.lstrip(b'--').decode()}",
+            "Content-Type":  f"multipart/form-data; boundary={boundary.decode()}",
         }
     )
     try:
-        with urllib.request.urlopen(req, timeout=40) as resp:
-            result = _json.loads(resp.read().decode())
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode())
             return result["url"]
     except urllib.error.HTTPError as e:
-        err_body = e.read().decode("utf-8", errors="replace")
-        print(f"[calvac] ImageKit HTTP error {e.code}: {err_body}")
-        raise RuntimeError(f"ImageKit {e.code}: {err_body[:200]}")
-    except Exception as e:
-        print(f"[calvac] ImageKit upload error: {e}")
-        raise
+        body_err = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"ImageKit upload failed: {e.code} {body_err}")
+
 
 @app.route("/api/x9k2/upload-image", methods=["POST"])
 @admin_required
@@ -794,28 +793,30 @@ def api_upload_image():
     if not allowed_file(file.filename):
         return jsonify({"error": "Invalid file type. Use JPG, PNG or WEBP"}), 400
 
-    brand_slug    = slugify(brand)
-    filename      = secure_filename(file.filename)
-    # Add timestamp prefix to avoid filename collisions
     import time as _t
-    ts = int(_t.time())
-    name_parts = filename.rsplit(".", 1)
-    filename   = f"{name_parts[0]}_{ts}.{name_parts[1]}" if len(name_parts) == 2 else f"{filename}_{ts}"
-    storage_path  = f"shoes/{brand_slug}/{filename}"
-    file_bytes    = file.read()
-    # Compress + convert to WebP before uploading (reduces egress significantly)
-    file_bytes    = _compress_image(file_bytes)
-    content_type  = "image/webp"
-    # Force .webp extension
-    if not storage_path.endswith(".webp"):
-        storage_path = storage_path.rsplit(".", 1)[0] + ".webp"
+    ts         = int(_t.time())
+    brand_slug = slugify(brand)
+    raw_name   = secure_filename(file.filename).rsplit(".", 1)[0]
+    filename   = f"{raw_name}_{ts}.webp"
+    folder     = f"shoes/{brand_slug}"
+    file_bytes = file.read()
+
+    # Compress to WebP, progressively harder to stay under 200KB
+    file_bytes = _compress_image(file_bytes, max_width=800, quality=82)
+    if len(file_bytes) > 200 * 1024:
+        file_bytes = _compress_image(file_bytes, max_width=600, quality=65)
+    if len(file_bytes) > 200 * 1024:
+        file_bytes = _compress_image(file_bytes, max_width=400, quality=55)
+
+    print(f"[calvac] Uploading {filename} ({len(file_bytes)//1024}KB) to ImageKit/{folder}")
 
     try:
-        public_url = _supabase_upload(file_bytes, content_type, storage_path)
+        public_url = _imagekit_upload(file_bytes, filename, folder)
+        print(f"[calvac] Upload OK: {public_url}")
         return jsonify({"success": True, "path": public_url, "url": public_url})
     except Exception as e:
         print(f"[calvac] Upload error: {e}")
-        return jsonify({"error": f"Upload failed: {str(e)}"}), 500
+        return jsonify({"error": f"Upload failed: {str(e)[:120]}"}), 500
 
 @app.route("/api/x9k2/offer", methods=["POST"])
 @admin_required
