@@ -1,5 +1,16 @@
 
 /* =================================================
+   IMAGEKIT URL HELPER
+   Rewrites an IK URL's tr= params for a new width/quality.
+   Safe to call on non-IK URLs — returns them unchanged.
+================================================= */
+function ikResize(url, width, quality) {
+    if (!url || !url.includes("ik.imagekit.io")) return url;
+    const base = url.split("?")[0];
+    return `${base}?tr=w-${width},q-${quality},f-webp,c-at_max`;
+}
+
+/* =================================================
    NEW ARRIVALS CAROUSEL
 ================================================= */
 async function renderNewArrivals() {
@@ -22,7 +33,7 @@ async function renderNewArrivals() {
             const deal  = getDeal(shoe);
             const oos   = shoe.out_of_stock === true;
             const img   = shoe.image
-                ? (shoe.image.startsWith("http") ? shoe.image : "/static/" + shoe.image)
+                ? ikResize(shoe.image.startsWith("http") ? shoe.image : "/static/" + shoe.image, 400, 75)
                 : "https://placehold.co/300x300/eaf3fa/2B9FD8?text=No+Image";
 
             const card = document.createElement("div");
@@ -978,7 +989,7 @@ async function loadProductPage() {
         window._currentShoe = shoe;  // store for size chip re-render on colour change
         nameEl.innerText  = shoe.name;
         priceEl.innerText = formatPrice(shoe.price);
-        imgEl.src         = shoe.image;
+        imgEl.src         = ikResize(shoe.image, 800, 85);
 
         // Show deal price on product page if applicable
         const deal = getDeal(shoe);
@@ -1359,7 +1370,7 @@ function renderColorSwatches(shoe) {
                 imgEl.style.opacity   = "0";
                 imgEl.style.transform = "scale(0.97)";
                 setTimeout(() => {
-                    imgEl.src = color.image;
+                    imgEl.src = ikResize(color.image, 800, 85);
                     imgEl.onerror = () => imgEl.src = "https://placehold.co/400x300/eaf3fa/2B9FD8?text=No+Image";
                     imgEl.style.opacity   = "1";
                     imgEl.style.transform = "scale(1)";
