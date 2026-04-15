@@ -70,8 +70,13 @@ app.config["MAX_CONTENT_LENGTH"]             = 5 * 1024 * 1024
 
 db.init_app(app)
 
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "claxxic@admin")
-ALLOWED_EXT    = {"png", "jpg", "jpeg", "webp"}
+ADMIN_PASSWORD  = os.environ.get("ADMIN_PASSWORD", "claxxic@admin")
+ALLOWED_EXT     = {"png", "jpg", "jpeg", "webp"}
+
+# ── IMAGEKIT CONFIG ───────────────────────────────────────────────────────────
+IK_PUBLIC_KEY   = os.environ.get("IK_PUBLIC_KEY", "")
+IK_PRIVATE_KEY  = os.environ.get("IK_PRIVATE_KEY", "")
+IK_URL_ENDPOINT = os.environ.get("IK_URL_ENDPOINT", "")
 
 # ── LOGIN RATE LIMITING (in-memory, resets on cold start) ─────────────────────
 _login_attempts  = defaultdict(list)   # ip → [timestamps]
