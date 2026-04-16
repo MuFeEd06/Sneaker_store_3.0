@@ -8,6 +8,48 @@
   ],
   "routes": [
     {
+      "src": "/static/(.*)",
+      "dest": "api/index.py",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/api/products(.*)",
+      "dest": "api/index.py",
+      "headers": {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60"
+      }
+    },
+    {
+      "src": "/api/brands",
+      "dest": "api/index.py",
+      "headers": {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60"
+      }
+    },
+    {
+      "src": "/api/offer",
+      "dest": "api/index.py",
+      "headers": {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=30"
+      }
+    },
+    {
+      "src": "/api/site-settings",
+      "dest": "api/index.py",
+      "headers": {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60"
+      }
+    },
+    {
+      "src": "/api/search(.*)",
+      "dest": "api/index.py",
+      "headers": {
+        "Cache-Control": "public, s-maxage=120, stale-while-revalidate=30"
+      }
+    },
+    {
       "src": "/(.*)",
       "dest": "api/index.py"
     }

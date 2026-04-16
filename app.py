@@ -25,7 +25,6 @@ CORS(app, resources={
         "origins": [
             "https://calvac.in",
             "https://www.calvac.in",
-            "https://claxxic-india.vercel.app",
         ],
         "methods": ["GET","POST","PUT","DELETE"],
         "allow_headers": ["Content-Type"],
@@ -145,6 +144,17 @@ def add_security_headers(response):
     # Only add HSTS on HTTPS (Vercel handles this but belt+suspenders)
     if request.is_secure:
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # Cache-Control for public GET API endpoints — lets Vercel CDN cache them
+    # so Flask/Supabase only runs once per cache window, not on every request
+    path = request.path
+    method = request.method
+    if method == "GET" and "Cache-Control" not in response.headers:
+        if path.startswith("/api/products") or path.startswith("/api/brands") or path.startswith("/api/search"):
+            response.headers["Cache-Control"] = "public, s-maxage=300, stale-while-revalidate=60"
+        elif path in ("/api/offer", "/api/site-settings"):
+            response.headers["Cache-Control"] = "public, s-maxage=60, stale-while-revalidate=30"
+        elif path.startswith("/static/"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     return response
 
 @app.before_request
