@@ -352,19 +352,11 @@ def inject_site_settings():
 def fix_image_paths(products_list):
     result = copy.deepcopy(products_list)
     for p in result:
-        img = p.get("image")
-        if img:
-            if "ik.imagekit.io" in img:
-                p["image"] = _ik_url(img, width=400, quality=75)
-            elif not img.startswith(("/static/", "http")):
-                p["image"] = "/static/" + img
+        if p.get("image") and not p["image"].startswith(("/static/", "http")):
+            p["image"] = "/static/" + p["image"]
         for c in p.get("colors", []):
-            cimg = c.get("image")
-            if cimg:
-                if "ik.imagekit.io" in cimg:
-                    c["image"] = _ik_url(cimg, width=400, quality=75)
-                elif not cimg.startswith(("/static/", "http")):
-                    c["image"] = "/static/" + cimg
+            if c.get("image") and not c["image"].startswith(("/static/", "http")):
+                c["image"] = "/static/" + c["image"]
     return result
 
 ALLOWED_MIMES = {"image/jpeg","image/png","image/webp","image/gif"}
@@ -746,21 +738,6 @@ def _compress_image(file_bytes, max_width=800, quality=82):
     except Exception as e:
         print(f"[calvac] Compression skipped: {e}")
         return file_bytes
-
-def _ik_url(path_or_url, width=400, quality=75):
-    """
-    Build an optimized ImageKit URL with on-the-fly transformations.
-    Strips any existing query params and appends tr= for resize + WebP.
-    Always preserves the full original URL — never reconstructs from endpoint.
-    """
-    if not path_or_url:
-        return path_or_url
-    if "ik.imagekit.io" not in path_or_url:
-        return path_or_url
-    base = path_or_url.split("?")[0]
-    tr = f"tr=w-{width},q-{quality},f-webp,c-at_max"
-    return f"{base}?{tr}"
-
 
 def _imagekit_upload(file_bytes, filename, folder="shoes"):
     """Upload image to ImageKit CDN. Free plan: 20GB bandwidth, 3GB storage, no credit card."""
