@@ -750,30 +750,14 @@ def _compress_image(file_bytes, max_width=800, quality=82):
 def _ik_url(path_or_url, width=400, quality=75):
     """
     Build an optimized ImageKit URL with on-the-fly transformations.
-    Accepts either a bare IK file path (/shoes/nike/shoe.webp)
-    or a full IK URL (https://ik.imagekit.io/xxx/shoes/nike/shoe.webp).
-    Transformation: resize to `width`px wide, WebP, quality `quality`.
-    This dramatically reduces bandwidth vs serving the raw file.
+    Strips any existing query params and appends tr= for resize + WebP.
+    Always preserves the full original URL — never reconstructs from endpoint.
     """
     if not path_or_url:
         return path_or_url
-    # Already a non-IK URL (Supabase, static, etc) — return as-is
     if "ik.imagekit.io" not in path_or_url:
         return path_or_url
-    # Strip any existing tr= params to avoid stacking
     base = path_or_url.split("?")[0]
-    # Extract bare path from full URL if needed
-    if base.startswith("http"):
-        # e.g. https://ik.imagekit.io/myid/shoes/... → /shoes/...
-        # IK_URL_ENDPOINT is like https://ik.imagekit.io/myid
-        endpoint = IK_URL_ENDPOINT.rstrip("/")
-        if endpoint and base.startswith(endpoint):
-            bare_path = base[len(endpoint):]
-        else:
-            # Fallback: strip protocol + host
-            from urllib.parse import urlparse
-            bare_path = urlparse(base).path
-        base = f"{endpoint}{bare_path}"
     tr = f"tr=w-{width},q-{quality},f-webp,c-at_max"
     return f"{base}?{tr}"
 
