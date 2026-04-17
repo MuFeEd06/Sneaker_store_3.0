@@ -149,10 +149,12 @@ def add_security_headers(response):
     path = request.path
     method = request.method
     if method == "GET" and "Cache-Control" not in response.headers:
-        if path.startswith("/api/products") or path.startswith("/api/brands") or path.startswith("/api/search"):
-            response.headers["Cache-Control"] = "public, s-maxage=300, stale-while-revalidate=60"
+        if path.startswith("/api/products") or path.startswith("/api/brands"):
+            response.headers["Cache-Control"] = "public, s-maxage=21600, stale-while-revalidate=300"
         elif path in ("/api/offer", "/api/site-settings"):
-            response.headers["Cache-Control"] = "public, s-maxage=60, stale-while-revalidate=30"
+            response.headers["Cache-Control"] = "public, s-maxage=21600, stale-while-revalidate=300"
+        elif path.startswith("/api/search"):
+            response.headers["Cache-Control"] = "public, s-maxage=3600, stale-while-revalidate=300"
         elif path.startswith("/static/"):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     return response
