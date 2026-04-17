@@ -150,12 +150,20 @@ def add_security_headers(response):
     method = request.method
     if method == "GET" and "Cache-Control" not in response.headers:
         if path.startswith("/api/products") or path.startswith("/api/brands"):
-            response.headers["Cache-Control"] = "public, s-maxage=21600, stale-while-revalidate=300"
+            # Products & brands: 12hr CDN cache, redeploy to bust
+            response.headers["Cache-Control"] = "public, s-maxage=43200, stale-while-revalidate=600"
         elif path in ("/api/offer", "/api/site-settings"):
-            response.headers["Cache-Control"] = "public, s-maxage=21600, stale-while-revalidate=300"
+            # Offer ribbon & site settings: 12hr CDN cache
+            response.headers["Cache-Control"] = "public, s-maxage=43200, stale-while-revalidate=600"
         elif path.startswith("/api/search"):
+            # Search: 1hr cache (many unique query strings, shorter TTL)
             response.headers["Cache-Control"] = "public, s-maxage=3600, stale-while-revalidate=300"
+        elif path in ("/", "/product", "/brand", "/cart", "/contact",
+                      "/privacy", "/return", "/shipping"):
+            # HTML pages: 10min CDN cache (short so template changes deploy fast)
+            response.headers["Cache-Control"] = "public, s-maxage=600, stale-while-revalidate=60"
         elif path.startswith("/static/"):
+            # Static assets (JS, CSS, GLB, images): 1yr immutable cache
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     return response
 
