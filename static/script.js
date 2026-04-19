@@ -19,9 +19,8 @@ async function renderNewArrivals() {
     if (!wrap || !track) return;
 
     try {
-        // Reuse the shared fetchProducts() cache — no separate API call needed
-        const allProducts = await fetchProducts();
-        const data = allProducts.filter(p => p.tag === "new");
+        const res  = await fetch("/api/products?tag=new");
+        const data = await res.json();
         if (!data || data.length === 0) {
             // Hide section if no new products
             const section = document.getElementById("new-arrivals");
@@ -498,9 +497,10 @@ function toggleAddressForm() {
 const container = document.getElementById("sneaker-container");
 
 if (container) {
-    fetchSiteSettings()
-        .then(cfg => initThreeScene(cfg))
-        .catch(() => initThreeScene({}));
+    fetch("/api/site-settings")
+        .then(r => r.json())
+        .catch(() => ({}))
+        .then(cfg => initThreeScene(cfg));
 }
 
 function initThreeScene(cfg) {
@@ -508,8 +508,7 @@ function initThreeScene(cfg) {
     if (!container) return;
 
     const rawPath = cfg.model_path || "sneaker.glb";
-    // GLB served from GitHub CDN — bypasses Flask entirely
-    const MODEL_PATH  = rawPath.startsWith("http") ? rawPath : "https://raw.githubusercontent.com/MuFeEd06/Sneaker_store_3.0/main/static/sneaker.glb";
+    const MODEL_PATH  = rawPath.startsWith("http") ? rawPath : "/static/" + rawPath;
     const MODEL_SCALE = parseFloat(cfg.model_scale)   || 3;
     const MODEL_Y     = parseFloat(cfg.model_y)       || 0.8;
     const MODEL_SPEED = parseFloat(cfg.model_speed)   || 0.006;
@@ -635,35 +634,13 @@ function renderBrandTiles() {
    PRODUCT UTILITIES
 ================================================= */
 // Singleton — all sections share one fetch per page load, reducing API calls & egress
-// Singleton + localStorage TTL cache (12hr matches server CDN cache)
-// Avoids hitting /api/products on every page load for repeat visitors
-const _PRODUCTS_TTL = 12 * 60 * 60 * 1000; // 12 hours in ms
 let _productsPromise = null;
-
 async function fetchProducts() {
-    // 1. In-memory singleton — shared across all sections on same page load
     if (_productsPromise) return _productsPromise;
-
-    // 2. localStorage cache — valid for 12hr (matches CDN TTL)
-    try {
-        const cached = localStorage.getItem("calvac_products_v2");
-        if (cached) {
-            const { ts, data } = JSON.parse(cached);
-            if (Date.now() - ts < _PRODUCTS_TTL) {
-                _productsPromise = Promise.resolve(data);
-                return _productsPromise;
-            }
-        }
-    } catch {}
-
-    // 3. Fetch from API and cache
     _productsPromise = fetch("/api/products")
         .then(r => r.json())
         .then(data => {
-            try {
-                localStorage.setItem("calvac_products_v2",
-                    JSON.stringify({ ts: Date.now(), data }));
-            } catch {}
+            try { localStorage.setItem("claxxic_products", JSON.stringify(data)); } catch {}
             return data;
         })
         .catch(e => { _productsPromise = null; throw e; });
@@ -1005,17 +982,8 @@ async function loadProductPage() {
 
     const id = parseInt(localStorage.getItem("productId"));
     try {
-        // Fetch single product directly — avoids loading all products for 1 item
-        let shoe;
-        try {
-            const res = await fetch(`/api/products/${id}`);
-            if (!res.ok) throw new Error("not found");
-            shoe = await res.json();
-        } catch {
-            // Fallback to full list if single fetch fails
-            const products = await fetchProducts();
-            shoe = products.find(p => p.id === id);
-        }
+        const products = await fetchProducts();
+        const shoe = products.find(p => p.id === id);
         if (!shoe) { nameEl.innerText = "Product not found"; return; }
 
         window._currentShoe = shoe;  // store for size chip re-render on colour change
@@ -1097,11 +1065,8 @@ async function loadProductPage() {
             }
         }
 
-        // Load full product list lazily for "You May Also Like" section
-        // Uses cache if available, otherwise fetches in background
-        fetchProducts().then(products => {
-            renderSimilarProducts(shoe, products);
-        }).catch(() => {});
+        // Render similar products
+        renderSimilarProducts(shoe, products);
 
     } catch (err) {
         console.error("Failed to load product:", err);
@@ -1177,7 +1142,8 @@ async function initCategoryScroll() {
     // Load which buttons are enabled from site settings
     let enabled = {};
     try {
-        const cfg  = await fetchSiteSettings();
+        const res  = await fetch("/api/site-settings");
+        const cfg  = await res.json();
         if (cfg.show_categories === false) {
             const section = document.getElementById("cat-scroll-section");
             if (section) section.style.display = "none";
@@ -1277,7 +1243,8 @@ let _sizeUnit = "uk";  // "uk" | "euro" — no both option
 
 async function loadSizeUnit() {
     try {
-        const data = await fetchSiteSettings();
+        const res  = await fetch("/api/site-settings");
+        const data = await res.json();
         _sizeUnit  = (data.size_unit === "euro") ? "euro" : "uk";
     } catch(e) { _sizeUnit = "both"; }
 }
