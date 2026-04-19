@@ -19,9 +19,8 @@ async function renderNewArrivals() {
     if (!wrap || !track) return;
 
     try {
-        // Reuse the shared fetchProducts() cache — no separate API call needed
-        const allProducts = await fetchProducts();
-        const data = allProducts.filter(p => p.tag === "new");
+        const res  = await fetch("/api/products?tag=new");
+        const data = await res.json();
         if (!data || data.length === 0) {
             // Hide section if no new products
             const section = document.getElementById("new-arrivals");
@@ -103,26 +102,26 @@ async function renderNewArrivals() {
 
 /* =================================================
    BRAND DEFINITIONS — local logo images
-   All logos go in: logo/brands/<slug>.png
+   All logos served from ImageKit CDN — no Flask calls
 ================================================= */
 const BRANDS = [
-    { name: "Nike",          slug: "Nike",          color: "#FF6B35", logo: "/static/logo/brands/nike.png" },
-    { name: "Adidas",        slug: "Adidas",        color: "#00B4D8", logo: "/static/logo/brands/adidas.png" },
-    { name: "New Balance",   slug: "New Balance",   color: "#4CAF50", logo: "/static/logo/brands/newbalance.png" },
-    { name: "Vans",          slug: "Vans",          color: "#FF3CAC", logo: "/static/logo/brands/vans.png" },
-    { name: "Converse",      slug: "Converse",      color: "#F72585", logo: "/static/logo/brands/converse.png" },
-    { name: "Puma",          slug: "Puma",          color: "#FFD60A", logo: "/static/logo/brands/puma.png" },
-    { name: "Reebok",        slug: "Reebok",        color: "#7B2FBE", logo: "/static/logo/brands/reebok.png" },
-    { name: "Asics",         slug: "Asics",         color: "#E63946", logo: "/static/logo/brands/asics.png" },
-    { name: "Sketchers",     slug: "Sketchers",     color: "#2EC4B6", logo: "/static/logo/brands/sketchers.png" },
-    { name: "On",            slug: "On",            color: "#F4A261", logo: "/static/logo/brands/on.png" },
-    { name: "Onitsuka",      slug: "Onitsuka",      color: "#C77DFF", logo: "/static/logo/brands/onitsuka.png" },
-    { name: "Lacoste",       slug: "Lacoste",       color: "#52B788", logo: "/static/logo/brands/lacoste.png" },
-    { name: "Brooks",        slug: "Brooks",        color: "#FF6B6B", logo: "/static/logo/brands/brooks.png" },
-    { name: "Timb",          slug: "Timb",          color: "#D4A373", logo: "/static/logo/brands/timb.png" },
-    { name: "Brik",          slug: "Brik",          color: "#ADB5BD", logo: "/static/logo/brands/brik.png" },
-    { name: "Alo",           slug: "Alo",           color: "#9BF5C8", logo: "/static/logo/brands/alo.png" },
-    { name: "Louis Vuitton", slug: "Louis Vuitton", color: "#C9A84C", logo: "/static/logo/brands/louisvuitton.png" },
+    { name: "Nike",          slug: "Nike",          color: "#FF6B35", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/nike.png?tr=w-80,q-80,f-webp" },
+    { name: "Adidas",        slug: "Adidas",        color: "#00B4D8", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/adidas.png?tr=w-80,q-80,f-webp" },
+    { name: "New Balance",   slug: "New Balance",   color: "#4CAF50", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/newbalance.png?tr=w-80,q-80,f-webp" },
+    { name: "Vans",          slug: "Vans",          color: "#FF3CAC", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/vans.png?tr=w-80,q-80,f-webp" },
+    { name: "Converse",      slug: "Converse",      color: "#F72585", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/converse.png?tr=w-80,q-80,f-webp" },
+    { name: "Puma",          slug: "Puma",          color: "#FFD60A", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/puma.png?tr=w-80,q-80,f-webp" },
+    { name: "Reebok",        slug: "Reebok",        color: "#7B2FBE", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/reebok.png?tr=w-80,q-80,f-webp" },
+    { name: "Asics",         slug: "Asics",         color: "#E63946", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/asics.png?tr=w-80,q-80,f-webp" },
+    { name: "Sketchers",     slug: "Sketchers",     color: "#2EC4B6", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/sketchers.png?tr=w-80,q-80,f-webp" },
+    { name: "On",            slug: "On",            color: "#F4A261", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/on.png?tr=w-80,q-80,f-webp" },
+    { name: "Onitsuka",      slug: "Onitsuka",      color: "#C77DFF", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/onitsuka.png?tr=w-80,q-80,f-webp" },
+    { name: "Lacoste",       slug: "Lacoste",       color: "#52B788", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/lacoste.png?tr=w-80,q-80,f-webp" },
+    { name: "Brooks",        slug: "Brooks",        color: "#FF6B6B", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/brooks.png?tr=w-80,q-80,f-webp" },
+    { name: "Timb",          slug: "Timb",          color: "#D4A373", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/timb.png?tr=w-80,q-80,f-webp" },
+    { name: "Brik",          slug: "Brik",          color: "#ADB5BD", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/brik.png?tr=w-80,q-80,f-webp" },
+    { name: "Alo",           slug: "Alo",           color: "#9BF5C8", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/alo.png?tr=w-80,q-80,f-webp" },
+    { name: "Louis Vuitton", slug: "Louis Vuitton", color: "#C9A84C", logo: "https://ik.imagekit.io/yocxectr4/logos/brands/louisvuitton.png?tr=w-80,q-80,f-webp" },
 ];
 
 function getBrandConfig(name) {
@@ -498,9 +497,10 @@ function toggleAddressForm() {
 const container = document.getElementById("sneaker-container");
 
 if (container) {
-    fetchSiteSettings()
-        .then(cfg => initThreeScene(cfg))
-        .catch(() => initThreeScene({}));
+    fetch("/api/site-settings")
+        .then(r => r.json())
+        .catch(() => ({}))
+        .then(cfg => initThreeScene(cfg));
 }
 
 function initThreeScene(cfg) {
@@ -633,64 +633,14 @@ function renderBrandTiles() {
 /* =================================================
    PRODUCT UTILITIES
 ================================================= */
-// Singleton + localStorage TTL cache for site settings (12hr)
-const _SETTINGS_TTL = 12 * 60 * 60 * 1000;
-let _settingsPromise = null;
-
-async function fetchSiteSettings() {
-    if (_settingsPromise) return _settingsPromise;
-    try {
-        const cached = localStorage.getItem("calvac_settings_v2");
-        if (cached) {
-            const { ts, data } = JSON.parse(cached);
-            if (Date.now() - ts < _SETTINGS_TTL) {
-                _settingsPromise = Promise.resolve(data);
-                return _settingsPromise;
-            }
-        }
-    } catch {}
-    _settingsPromise = fetch("/api/site-settings")
-        .then(r => r.json())
-        .then(data => {
-            try {
-                localStorage.setItem("calvac_settings_v2",
-                    JSON.stringify({ ts: Date.now(), data }));
-            } catch {}
-            return data;
-        })
-        .catch(e => { _settingsPromise = null; return {}; });
-    return _settingsPromise;
-}
-
-// Singleton + localStorage TTL cache (12hr matches server CDN cache)
-// Avoids hitting /api/products on every page load for repeat visitors
-const _PRODUCTS_TTL = 12 * 60 * 60 * 1000; // 12 hours in ms
+// Singleton — all sections share one fetch per page load, reducing API calls & egress
 let _productsPromise = null;
-
 async function fetchProducts() {
-    // 1. In-memory singleton — shared across all sections on same page load
     if (_productsPromise) return _productsPromise;
-
-    // 2. localStorage cache — valid for 12hr (matches CDN TTL)
-    try {
-        const cached = localStorage.getItem("calvac_products_v2");
-        if (cached) {
-            const { ts, data } = JSON.parse(cached);
-            if (Date.now() - ts < _PRODUCTS_TTL) {
-                _productsPromise = Promise.resolve(data);
-                return _productsPromise;
-            }
-        }
-    } catch {}
-
-    // 3. Fetch from API and cache
     _productsPromise = fetch("/api/products")
         .then(r => r.json())
         .then(data => {
-            try {
-                localStorage.setItem("calvac_products_v2",
-                    JSON.stringify({ ts: Date.now(), data }));
-            } catch {}
+            try { localStorage.setItem("claxxic_products", JSON.stringify(data)); } catch {}
             return data;
         })
         .catch(e => { _productsPromise = null; throw e; });
@@ -1032,18 +982,8 @@ async function loadProductPage() {
 
     const id = parseInt(localStorage.getItem("productId"));
     try {
-        // Fetch single product directly — avoids loading all 115 products for 1 item
-        // Still load full list in background for "You May Also Like" section
-        let shoe;
-        try {
-            const res = await fetch(`/api/products/${id}`);
-            if (!res.ok) throw new Error("not found");
-            shoe = await res.json();
-        } catch {
-            // Fallback to full list if single fetch fails
-            const products = await fetchProducts();
-            shoe = products.find(p => p.id === id);
-        }
+        const products = await fetchProducts();
+        const shoe = products.find(p => p.id === id);
         if (!shoe) { nameEl.innerText = "Product not found"; return; }
 
         window._currentShoe = shoe;  // store for size chip re-render on colour change
@@ -1125,11 +1065,8 @@ async function loadProductPage() {
             }
         }
 
-        // Load full product list lazily for "You May Also Like" section
-        // Uses cache if available, otherwise fetches in background
-        fetchProducts().then(products => {
-            renderSimilarProducts(shoe, products);
-        }).catch(() => {});
+        // Render similar products
+        renderSimilarProducts(shoe, products);
 
     } catch (err) {
         console.error("Failed to load product:", err);
@@ -1175,7 +1112,7 @@ function buildCatCard(cat) {
     imgWrap.className = "na-cat-img-wrap";
 
     const img = document.createElement("img");
-    img.src       = "/static/logo/categories/" + cat.slug + ".png";
+    img.src       = "https://ik.imagekit.io/yocxectr4/logos/categories/" + cat.slug + ".png?tr=w-80,q-80,f-webp";
     img.alt       = cat.label;
     img.loading   = "lazy";
     img.className = "na-cat-logo";
@@ -1205,7 +1142,8 @@ async function initCategoryScroll() {
     // Load which buttons are enabled from site settings
     let enabled = {};
     try {
-        const cfg  = await fetchSiteSettings();
+        const res  = await fetch("/api/site-settings");
+        const cfg  = await res.json();
         if (cfg.show_categories === false) {
             const section = document.getElementById("cat-scroll-section");
             if (section) section.style.display = "none";
@@ -1305,7 +1243,8 @@ let _sizeUnit = "uk";  // "uk" | "euro" — no both option
 
 async function loadSizeUnit() {
     try {
-        const data = await fetchSiteSettings();
+        const res  = await fetch("/api/site-settings");
+        const data = await res.json();
         _sizeUnit  = (data.size_unit === "euro") ? "euro" : "uk";
     } catch(e) { _sizeUnit = "both"; }
 }
