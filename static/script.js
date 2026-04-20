@@ -509,7 +509,7 @@ function initThreeScene(cfg) {
 
     const rawPath = cfg.model_path || "sneaker.glb";
     // GLB served from GitHub CDN — bypasses Flask entirely
-    const MODEL_PATH  = rawPath.startsWith("http") ? rawPath : "https://raw.githubusercontent.com/MuFeEd06/Sneaker_store_3.0/main/static/sneaker.glb";
+    const MODEL_PATH  = rawPath.startsWith("http") ? rawPath : "https://ik.imagekit.io/yocxectr4/models/sneaker.glb";
     const MODEL_SCALE = parseFloat(cfg.model_scale)   || 3;
     const MODEL_Y     = parseFloat(cfg.model_y)       || 0.8;
     const MODEL_SPEED = parseFloat(cfg.model_speed)   || 0.006;
