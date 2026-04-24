@@ -937,6 +937,18 @@ async function renderBrandPage() {
             const qb  = norm(brandName);
             filtered  = products.filter(p => norm(p.brand) === qb || norm(p.brand).includes(qb));
             pageTitle = brandName;
+        } else {
+            // No filter params — "All Shoes" shows everything
+            filtered  = [...products];
+            pageTitle = "All Shoes";
+            document.title = "All Shoes — CALVAC";
+            if (titleEl)      titleEl.textContent      = "All Shoes";
+            if (sectionTitle) sectionTitle.textContent = "All Styles";
+            if (monogramEl) {
+                monogramEl.style.background = "rgba(43,159,216,0.12)";
+                monogramEl.style.border     = "1px solid rgba(43,159,216,0.3)";
+                monogramEl.innerHTML        = `<span style="font-size:2.4rem;">👟</span>`;
+            }
         }
 
         if (countEl) countEl.textContent = filtered.length;
@@ -1176,7 +1188,7 @@ function buildCatCard(cat) {
     imgWrap.className = "na-cat-img-wrap";
 
     const img = document.createElement("img");
-    img.src       = "https://ik.imagekit.io/yocxectr4/logos/categories/" + cat.slug + ".png?tr=w-80,q-80,f-webp";
+    img.src       = "https://ik.imagekit.io/yocxectr4/logos/categories/" + cat.slug + ".png";
     img.alt       = cat.label;
     img.loading   = "lazy";
     img.className = "na-cat-logo";

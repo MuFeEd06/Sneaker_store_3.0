@@ -283,6 +283,8 @@ DEFAULT_SITE_SETTINGS = {
     "cat_under1500":   True,
     "cat_under2500":   True,
     "cat_new":         True,
+    "cat_premium":     True,
+    "cat_all":         True,
     "size_unit": "uk",   # "uk" or "euro" — no both option
     # Policy pages content (markdown/HTML stored as plain text)
     "policy_privacy":  "# Privacy Policy\n\nYour privacy is important to us. We do not share your personal data with third parties.",
@@ -414,6 +416,15 @@ def admin_required(f):
 
 
 # ── PAGE ROUTES ───────────────────────────────────────────────────────────────
+
+
+@app.route("/robots.txt")
+def robots():
+    return "User-agent: *\nAllow: /\nDisallow: /manage-store-x9k2\n", 200, {"Content-Type": "text/plain", "Cache-Control": "public, max-age=86400"}
+
+@app.route("/favicon.ico")
+def favicon():
+    return redirect("https://ik.imagekit.io/yocxectr4/logos/clc.png?tr=w-32,h-32,f-webp")
 
 @app.route("/")
 def index(): return render_template("index.html")
@@ -901,6 +912,7 @@ def api_save_site_settings():
         "show_categories",
         "cat_boots","cat_crocs","cat_girls","cat_sale",
         "cat_under1000","cat_under1500","cat_under2500","cat_new",
+        "cat_premium","cat_all",
         "size_unit",
         "policy_privacy","policy_refund","policy_shipping",
     }
