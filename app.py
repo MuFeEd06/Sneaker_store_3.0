@@ -24,6 +24,7 @@ CORS(app, resources={
     r"/api/*": {
         "origins": [
             "https://calvac.in",
+            "https://calvac-4-0-beze.vercel.app/",
             "https://www.calvac.in",
         ],
         "methods": ["GET","POST","PUT","DELETE"],
